@@ -12,15 +12,15 @@ export default function Sidemenu({ className }: { className?: string }) {
   const pathname = usePathname() || "/"
 
   const items = [
-    { href: "/overview", label: "Overview", icon: Home },
-    { href: "/reports", label: "Reports", icon: BarChart2 },
-    { href: "/settings", label: "Settings", icon: Settings },
+    { href: "/overview", label: "Suivi", icon: Home },
+    { href: "/reports", label: "Rapports", icon: BarChart2 },
+    { href: "/settings", label: "Paramètres", icon: Settings },
   ]
 
   return (
     <aside
       className={cn(
-        "flex flex-col w-64 h-screen border-r bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100",
+        "fixed left-0 top-0 flex flex-col w-64 h-screen border-r bg-white text-slate-900 dark:bg-slate-900 dark:text-slate-100 z-10",
         className
       )}
     >
@@ -51,7 +51,7 @@ export default function Sidemenu({ className }: { className?: string }) {
         })}
       </nav>
 
-      <div className="px-4 py-4">
+      <div className="ml-auto px-4 py-4">
         <ModeToggle />
       </div>
     </aside>

@@ -24,7 +24,7 @@ export default function RootLayout({
           >
             <div className="flex min-h-screen">
               <Sidemenu />
-              <main className="flex-1 overflow-auto bg-background">
+              <main className="flex-1 ml-64 overflow-auto bg-background">
                 {children}
               </main>
             </div>

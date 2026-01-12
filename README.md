@@ -1,36 +1,84 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Vapplestore View 🚀
 
-## Getting Started
+**Auteur :** PILATH
 
-First, run the development server:
+## À propos
+
+**Vapplestore View** est un outil d'administration pensé pour le suivi et la gestion des boutiques de la franchise **Vapplestore**. Il fournit une interface claire pour consulter les rapports, gérer les inventaires en boutiques et suivre l'activité quotidienne.
+
+---
+
+## Fonctionnalités principales ✅
+
+- Tableau de bord et pages de reporting pour visualiser l'activité
+- Gestion des paramètres et préférences des outils
+- Thème sombre/clair et bascule d'apparence
+- Composants UI réutilisables et état global léger
+
+---
+
+## Technologies & outils 🔧
+
+- **Next.js** (App Router) + **TypeScript**
+- **Tailwind CSS** pour le style
+- Composants inspirés de **shadcn/ui** (Radix + Tailwind)
+- **Zustand** pour la gestion d'état locale
+- **Lucide** pour les icônes
+- **next-themes** pour la gestion du thème
+- Outils de développement : **Bun** (install & dev), **ESLint**, **TypeScript**
+
+---
+
+## Installation & démarrage 🛠️
+
+Prerequis : Bun (recommandé) ou Node (npm / pnpm / yarn)
+
+Avec Bun (recommandé) :
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
+bun install
 bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Avec npm :
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm install
+npm run dev
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+L'application sera accessible à l'adresse : `http://localhost:3000`.
 
-## Learn More
+Pour construire et démarrer en production :
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run build
+npm run start
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Pour lancer le linter :
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```bash
+npm run lint
+```
 
-## Deploy on Vercel
+---
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Structure du projet 📁
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `app/` : pages (App Router)
+- `components/` : composants réutilisables (UI, menu, etc.)
+- `ui/` : primitives UI (boutons, menus)
+- `hook/` : stores et hooks (z. ex. Zustand)
+- `lib/` : utilitaires
+- `public/` : actifs publics
+
+---
+
+## Contribution & contact ✉️
+
+Projet créé par **PILATH**. Toute contribution est la bienvenue : ouvrez une issue ou une pull request.
+
+---
+
+Bonne exploration — si vous avez besoin d'aide contactez moi. 💡
