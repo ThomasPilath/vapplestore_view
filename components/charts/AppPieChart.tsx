@@ -3,15 +3,22 @@
 import React, { useMemo } from "react"
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
 
+interface PieChartData {
+  name: string
+  value: number
+  [key: string]: any
+}
+
 interface AppPieChartProps {
-  data: Array<{
-    name: string
-    value: number
-  }>
+  data: PieChartData[]
   colors: string[]
   hideSundays: boolean
 }
 
+/**
+ * Composant graphique en camembert (donut)
+ * Affiche la distribution des données avec légende centrée
+ */
 export default function AppPieChart({ data, colors, hideSundays }: AppPieChartProps) {
   const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data])
 
@@ -39,7 +46,15 @@ export default function AppPieChart({ data, colors, hideSundays }: AppPieChartPr
     innerRadius?: number
     outerRadius?: number
   }) => {
-    if (!value || value <= 0 || cx === undefined || cy === undefined || midAngle === undefined || innerRadius === undefined || outerRadius === undefined) {
+    if (
+      !value ||
+      value <= 0 ||
+      cx === undefined ||
+      cy === undefined ||
+      midAngle === undefined ||
+      innerRadius === undefined ||
+      outerRadius === undefined
+    ) {
       return null
     }
 
@@ -49,14 +64,22 @@ export default function AppPieChart({ data, colors, hideSundays }: AppPieChartPr
     const y = cy + radius * Math.sin(-midAngle * RADIAN)
 
     return (
-      <text x={x} y={y} fill="#ffffff" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={700}>
+      <text
+        x={x}
+        y={y}
+        fill="#ffffff"
+        textAnchor="middle"
+        dominantBaseline="central"
+        fontSize={12}
+        fontWeight={700}
+      >
         {value}
       </text>
     )
   }
 
   return (
-    <div className="w-full h-60 md:h-65 relative">
+    <div className="relative h-60 w-full md:h-65">
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -76,17 +99,14 @@ export default function AppPieChart({ data, colors, hideSundays }: AppPieChartPr
           </Pie>
         </PieChart>
       </ResponsiveContainer>
-      
-      {/* Labels centrés avec design inspiré de la légende */}
-      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+
+      {/* Légende centrée avec labels et couleurs */}
+      <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
         <div className="flex flex-col items-center gap-2">
           {data.map((item, index) => (
             <div key={item.name} className="flex items-center gap-2">
-              <div 
-                className="w-4 h-4 rounded-sm" 
-                style={{ backgroundColor: colors[index] }}
-              ></div>
-              <span className="text-xs md:text-sm font-medium">{item.name}</span>
+              <div className="h-4 w-4 rounded-sm" style={{ backgroundColor: colors[index] }} />
+              <span className="text-xs font-medium md:text-sm">{item.name}</span>
             </div>
           ))}
         </div>

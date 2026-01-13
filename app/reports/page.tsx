@@ -102,13 +102,13 @@ export default function Reports() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[100px]">Date</TableHead>
-                    <TableHead className="min-w-[100px]">Base 20%</TableHead>
-                    <TableHead className="min-w-[100px]">TVA 20%</TableHead>
-                    <TableHead className="min-w-[100px]">Base 5,5%</TableHead>
-                    <TableHead className="min-w-[100px]">TVA 5,5%</TableHead>
-                    <TableHead className="min-w-[100px]">Total HT</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Total TTC</TableHead>
+                    <TableHead className="min-w-25">Date</TableHead>
+                    <TableHead className="min-w-25">Base 20%</TableHead>
+                    <TableHead className="min-w-25">TVA 20%</TableHead>
+                    <TableHead className="min-w-25">Base 5,5%</TableHead>
+                    <TableHead className="min-w-25">TVA 5,5%</TableHead>
+                    <TableHead className="min-w-25">Total HT</TableHead>
+                    <TableHead className="text-right min-w-30">Total TTC</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -168,11 +168,11 @@ export default function Reports() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="min-w-[100px]">Date</TableHead>
-                    <TableHead className="min-w-[100px]">Prix HT</TableHead>
-                    <TableHead className="min-w-[100px]">TVA 20%</TableHead>
-                    <TableHead className="min-w-[100px]">Frais de port</TableHead>
-                    <TableHead className="text-right min-w-[120px]">Total TTC</TableHead>
+                    <TableHead className="min-w-25">Date</TableHead>
+                    <TableHead className="min-w-25">Prix HT</TableHead>
+                    <TableHead className="min-w-25">TVA 20%</TableHead>
+                    <TableHead className="min-w-25">Frais de port</TableHead>
+                    <TableHead className="text-right min-w-30">Total TTC</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

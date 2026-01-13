@@ -11,23 +11,38 @@ import {
   LabelList,
 } from "recharts"
 
+interface BarChartData {
+  name: string
+  ouvert?: number
+  fermé?: number
+  dimanche?: number
+}
+
 interface AppBarChartProps {
-  data: Array<{
-    name: string
-    ouvert?: number
-    fermé?: number
-    dimanche?: number
-  }>
+  data: BarChartData[]
   hideSundays: boolean
 }
 
+/**
+ * Composant graphique en barres pour visualiser les jours ouverts/fermés
+ * @param data Données avec colonnes: name, ouvert, fermé, dimanche
+ * @param hideSundays Masquer la colonne dimanche si true
+ */
 export default function AppBarChart({ data, hideSundays }: AppBarChartProps) {
   // Renderer pour afficher un label centré uniquement si la valeur > 0
-  const renderCenteredValue = (props: any) => {
+  const renderCenteredValue = (props: {
+    value?: number
+    x?: number
+    y?: number
+    width?: number
+    height?: number
+  }) => {
     const { value, x, y, width, height } = props
-    if (!value || value <= 0) return null
-    const cx = x + (width || 0) / 2
-    const cy = y + (height || 0) / 2
+    if (!value || value <= 0 || x === undefined || y === undefined || width === undefined || height === undefined) {
+      return null
+    }
+    const cx = x + width / 2
+    const cy = y + height / 2
     return (
       <text
         x={cx}

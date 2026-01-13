@@ -48,7 +48,7 @@ const useMediaQuery = (query: string) => {
 export default function AppLineChart({
   data,
   formatter,
-  thresholdLine = { value: 300, label: "Seuil 300€" },
+  thresholdLine = { value: 300, label: "300" },
 }: AppLineChartProps) {
   const isMobile = useMediaQuery("(max-width: 768px)")
   const [weekIndex, setWeekIndex] = useState(0)
@@ -95,7 +95,7 @@ export default function AppLineChart({
         </div>
       )}
 
-      <ResponsiveContainer width="100%" height={280} className="md:h-[400px]">
+      <ResponsiveContainer width="100%" height={280} className="md:h-100">
         <LineChart data={displayData} margin={{ top: 20, right: 30, left: 0, bottom: 20 }}>
           <CartesianGrid strokeDasharray="3 3" />
           <XAxis
@@ -106,6 +106,8 @@ export default function AppLineChart({
           <YAxis
             label={{ value: "Montant (€)", angle: -90, position: "insideLeft" }}
             tick={{ fontSize: 12 }}
+            domain={[0, 800]}
+            ticks={[200, 400, 600, 800]}
           />
           <Tooltip formatter={(value) => formatter(value as number)} />
           <Legend wrapperStyle={{ fontSize: '14px' }} />

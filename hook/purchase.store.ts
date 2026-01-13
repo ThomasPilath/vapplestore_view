@@ -1,20 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { PurchaseEntry, CreatePurchasePayload } from "@/types";
 
-export type PurchaseEntry = {
-  id: string;
-  /** date d'achat (YYYY-MM-DD) */
-  date: string;
-  priceHT: number;
-  tva: number;
-  shippingFee: number;
-  ttc: number;
-  createdAt: string;
-};
+export type { PurchaseEntry };
 
 type PurchaseStore = {
   entries: PurchaseEntry[];
-  addEntry: (entry: Omit<PurchaseEntry, "id" | "createdAt">) => void;
+  addEntry: (entry: CreatePurchasePayload) => void;
   clear: () => void;
 };
 
@@ -25,12 +17,10 @@ export const storePurchase = create<PurchaseStore>()(
       addEntry(entry) {
         const fullEntry: PurchaseEntry = {
           ...entry,
-          id: String(Date.now()),
+          id: crypto.randomUUID(),
           createdAt: new Date().toISOString(),
         };
         set((s) => ({ entries: [fullEntry, ...s.entries] }));
-        // eslint-disable-next-line no-console
-        console.log("Purchase stored:", fullEntry);
       },
       clear() {
         set({ entries: [] });

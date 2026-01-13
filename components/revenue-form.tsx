@@ -6,54 +6,71 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { storeRevenue } from "@/hook/revenue.store";
 
-const fmt = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
+// Format pour afficher les montants en EUR
+const currencyFormatter = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
 
-type Props = {
+type RevenueFormProps = {
+  /** Callback appelé après la soumission du formulaire */
   onSubmitted?: () => void;
+  /** Callback appelé pour fermer le formulaire */
   onClose?: () => void;
 };
 
-export default function RevenueForm({ onSubmitted, onClose }: Props) {
+/**
+ * Formulaire de saisie du chiffre d'affaires
+ * Permet d'ajouter les revenus avec supports pour TVA 20% et 5.5%
+ */
+export default function RevenueForm({ onSubmitted, onClose }: RevenueFormProps) {
   const addEntry = storeRevenue((s) => s.addEntry);
 
+  // Initialiser avec la date du jour
   const todayISO = new Date().toISOString().slice(0, 10);
   const [date, setDate] = useState<string>(todayISO);
 
+  // Champs de saisie pour TVA 20%
   const [base20, setBase20] = useState<string>("");
   const [tva20, setTva20] = useState<string>("");
+
+  // Champs de saisie pour TVA 5.5%
   const [base5_5, setBase5_5] = useState<string>("");
   const [tva5_5, setTva5_5] = useState<string>("");
 
+  // Calculs automatiques
   const ht = useMemo(() => Number(base20 || 0) + Number(base5_5 || 0), [base20, base5_5]);
   const tvaTotal = useMemo(() => Number(tva20 || 0) + Number(tva5_5 || 0), [tva20, tva5_5]);
   const ttc = useMemo(() => ht + tvaTotal, [ht, tvaTotal]);
 
-  function handleSend() {
+  const handleSubmit = () => {
     addEntry({ date, base20: Number(base20 || 0), tva20: Number(tva20 || 0), base5_5: Number(base5_5 || 0), tva5_5: Number(tva5_5 || 0), ht, ttc });
+    
+    // Réinitialiser le formulaire
     setDate(todayISO);
     setBase20("");
     setTva20("");
     setBase5_5("");
     setTva5_5("");
 
-    if (onSubmitted) onSubmitted();
-  }
+    onSubmitted?.();
+  };
 
   return (
-    <div className="max-w-xl mx-auto p-6 bg-white dark:bg-slate-700 rounded shadow relative">
+    <div className="mx-auto w-full max-w-xl rounded border bg-white p-6 shadow dark:bg-slate-700">
+      {/* Bouton de fermeture */}
       {onClose && (
         <button
           onClick={onClose}
-          className="absolute top-3 right-3 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
-          aria-label="Fermer"
+          className="absolute right-3 top-3 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300"
+          aria-label="Fermer le formulaire"
         >
           ✕
         </button>
       )}
-      <h3 className="text-lg text-slate-700 dark:text-slate-200 font-semibold mb-4">Saisie chiffre d'affaires</h3>
 
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="flex flex-col col-span-2">
+      <h3 className="mb-6 text-lg font-semibold text-slate-700 dark:text-slate-200">Saisie chiffre d'affaires</h3>
+
+      <div className="mb-6 grid grid-cols-2 gap-4">
+        {/* Champ date */}
+        <div className="col-span-2 flex flex-col">
           <Label htmlFor="date-saisie">Date de saisie</Label>
           <Input
             id="date-saisie"
@@ -64,6 +81,7 @@ export default function RevenueForm({ onSubmitted, onClose }: Props) {
           />
         </div>
 
+        {/* TVA 20% */}
         <div className="flex flex-col">
           <Label htmlFor="base20">Base 20%</Label>
           <Input
@@ -88,6 +106,7 @@ export default function RevenueForm({ onSubmitted, onClose }: Props) {
           />
         </div>
 
+        {/* TVA 5.5% */}
         <div className="flex flex-col">
           <Label htmlFor="base55">Base 5,5%</Label>
           <Input
@@ -113,20 +132,22 @@ export default function RevenueForm({ onSubmitted, onClose }: Props) {
         </div>
       </div>
 
-      <div className="flex justify-between items-center mb-4">
+      {/* Résumé des totaux */}
+      <div className="mb-4 flex justify-between items-center">
         <div>
           <div className="text-sm text-slate-500">Chiffre d'affaires HT</div>
-          <div className="text-xl text-slate-700 dark:text-slate-200 font-semibold">{fmt.format(ht)}</div>
+          <div className="text-xl font-semibold text-slate-700 dark:text-slate-200">{currencyFormatter.format(ht)}</div>
         </div>
 
         <div>
           <div className="text-sm text-slate-500">Chiffre d'affaires TTC</div>
-          <div className="text-xl text-slate-700 dark:text-slate-200 font-semibold">{fmt.format(ttc)}</div>
+          <div className="text-xl font-semibold text-slate-700 dark:text-slate-200">{currencyFormatter.format(ttc)}</div>
         </div>
       </div>
 
-      <div className="flex gap-2 justify-end">
-        <Button variant="secondary" onClick={handleSend}>
+      {/* Boutons d'action */}
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={handleSubmit}>
           Envoyer
         </Button>
       </div>

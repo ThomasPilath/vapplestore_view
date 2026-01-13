@@ -1,10 +1,10 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { UserSettings } from "@/types";
 
-interface SettingsStore {
-  hideSundays: boolean;
+type SettingsStore = UserSettings & {
   setHideSundays: (value: boolean) => void;
-}
+};
 
 export const storeSettings = create<SettingsStore>()(
   persist(
