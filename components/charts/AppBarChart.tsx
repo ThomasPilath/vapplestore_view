@@ -1,0 +1,65 @@
+"use client"
+
+import React from "react"
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  ResponsiveContainer,
+  LabelList,
+} from "recharts"
+
+interface AppBarChartProps {
+  data: Array<{
+    name: string
+    ouvert?: number
+    fermé?: number
+    dimanche?: number
+  }>
+  hideSundays: boolean
+}
+
+export default function AppBarChart({ data, hideSundays }: AppBarChartProps) {
+  // Renderer pour afficher un label centré uniquement si la valeur > 0
+  const renderCenteredValue = (props: any) => {
+    const { value, x, y, width, height } = props
+    if (!value || value <= 0) return null
+    const cx = x + (width || 0) / 2
+    const cy = y + (height || 0) / 2
+    return (
+      <text
+        x={cx}
+        y={cy}
+        fill="#ffffff"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize={14}
+      >
+        {value}
+      </text>
+    )
+  }
+
+  return (
+    <ResponsiveContainer width="100%" height={200} className="md:h-62.5">
+      <BarChart data={data} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
+        <CartesianGrid strokeDasharray="3 3" />
+        <XAxis dataKey="name" tick={false} />
+        <YAxis />
+        {!hideSundays && (
+          <Bar dataKey="dimanche" stackId="a" fill="#9ca3af" name="Dimanche">
+            <LabelList dataKey="dimanche" content={renderCenteredValue} />
+          </Bar>
+        )}
+        <Bar dataKey="ouvert" stackId="a" fill="#10b981" name="Ouvert">
+          <LabelList dataKey="ouvert" content={renderCenteredValue} />
+        </Bar>
+        <Bar dataKey="fermé" stackId="a" fill="#ef4444" name="Fermé">
+          <LabelList dataKey="fermé" content={renderCenteredValue} />
+        </Bar>
+      </BarChart>
+    </ResponsiveContainer>
+  )
+}

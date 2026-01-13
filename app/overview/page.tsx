@@ -1,25 +1,16 @@
 "use client"
 
 import React, { useMemo, useState, useEffect } from "react";
-import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
 import { storeRevenue } from "@/hook/revenue.store";
 import { storePurchase } from "@/hook/purchase.store";
 import { storeSettings } from "@/hook/settings.store";
 import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import AppBarChart from "@/components/charts/AppBarChart";
+import AppPieChart from "@/components/charts/AppPieChart";
+import AppLineChart from "@/components/charts/AppLineChart";
 
 const fmt = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" });
 
@@ -200,185 +191,147 @@ export default function Overview() {
   }, [entries, selectedMonth, hideSundaysInChart]);
 
   return (
-    <main className="flex-1 overflow-auto px-6 bg-slate-50 dark:bg-slate-950">
-      <h2 className="h-auto w-min mx-auto text-2xl font-bold my-4 p-2 border-2 rounded-2xl border-slate-500">SUIVI</h2>
-      {/* Sélecteur de mois */}
-      <div className="fixed top-2 left-70">
-        <label className="text-sm text-slate-600 dark:text-slate-300 mb-2 block">Sélectionner le mois</label>
-        <Input
-          type="month"
-          value={selectedMonth}
-          onChange={(e) => setSelectedMonth(e.target.value)}
-          className="w-48"
-        />
-      </div>
-
-      {/* Jours d'ouverture/fermeture */}
-      <div className="grid grid-cols-3 gap-6 mb-6">
-        {/* Jours d'ouverture - BarChart */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow">
-          <h3 className="text-lg font-semibold mb-4">Jours d'ouverture ({selectedMonth})</h3>
-          
-          {/* Légende personnalisée */}
-          <div className="flex gap-4 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: "#10b981" }}></div>
-              <span className="text-sm font-medium">Ouvert</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: "#ef4444" }}></div>
-              <span className="text-sm font-medium">Fermé</span>
-            </div>
-            {!hideSundays && (
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: "#9ca3af" }}></div>
-                <span className="text-sm font-medium">Dimanche</span>
-              </div>
-            )}
+    <main className="flex-1 overflow-auto p-3 md:p-5 bg-slate-50 dark:bg-slate-950">
+      <div className="max-w-7xl mx-auto space-y-5">
+        {/* Header avec titre et sélecteur de mois */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <h2 className="text-2xl md:text-3xl font-bold text-center md:text-left">SUIVI</h2>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="month-selector" className="text-sm">Sélectionner le mois</Label>
+            <Input
+              id="month-selector"
+              type="month"
+              value={selectedMonth}
+              onChange={(e) => setSelectedMonth(e.target.value)}
+              className="w-full md:w-48"
+            />
           </div>
-          
-          <ResponsiveContainer width="100%" height={250}>
-            <BarChart
-              data={
-                hideSundays
-                  ? [
-                      { name: "Ouvert", ouvert: dailyStats.openDays, fermé: 0 },
-                      { name: "Fermé", ouvert: 0, fermé: dailyStats.closedDays },
-                    ]
-                  : [
-                      { name: "Ouvert", ouvert: dailyStats.openDays, fermé: 0, dimanche: 0 },
-                      { name: "Fermé", ouvert: 0, fermé: dailyStats.closedDays, dimanche: dailyStats.sundayDays },
-                    ]
-              }
-            >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" tick={false} />
-              <YAxis />
-              <Tooltip />
-              {!hideSundays && <Bar dataKey="dimanche" stackId="a" fill="#9ca3af" name="Dimanche" />}
-              <Bar dataKey="ouvert" stackId="a" fill="#10b981" name="Ouvert" />
-              <Bar dataKey="fermé" stackId="a" fill="#ef4444" name="Fermé" />
-            </BarChart>
-          </ResponsiveContainer>
         </div>
 
-        {/* Distribution des revenus par jour - PieChart */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow">
-          <h3 className="text-lg font-semibold mb-4">Distribution (revenus par jour)</h3>
-          <div className="flex gap-6">
-            {/* PieChart */}
-            <div className="shrink-0">
-              <ResponsiveContainer width={200} height={250}>
-                <PieChart>
-                  <Pie
-                    data={
-                      hideSundays
-                        ? [
-                            { name: "0€", value: dailyStats.distribution.zero },
-                            { name: "< 300€", value: dailyStats.distribution.lessThan300 },
-                            { name: "300-399€", value: dailyStats.distribution.between300And400 },
-                            { name: "≥ 400€", value: dailyStats.distribution.greaterOrEqual400 },
-                          ]
-                        : [
-                            { name: "0€", value: dailyStats.distribution.zero },
-                            { name: "< 300€", value: dailyStats.distribution.lessThan300 },
-                            { name: "300-399€", value: dailyStats.distribution.between300And400 },
-                            { name: "≥ 400€", value: dailyStats.distribution.greaterOrEqual400 },
-                            { name: "Dimanche", value: dailyStats.distribution.sunday },
-                          ]
-                    }
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={false}
-                    outerRadius={60}
-                    fill="#8884d8"
-                    dataKey="value"
-                  >
-                    <Cell fill="#ef4444" />
-                    <Cell fill="#fbbf24" />
-                    <Cell fill="#86efac" />
-                    <Cell fill="#16a34a" />
-                    {!hideSundays && <Cell fill="#9ca3af" />}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-
-            {/* Légende */}
-            <div className="flex flex-col justify-center gap-3">
+        {/* Grid principal responsive */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 md:gap-5">
+          {/* Jours d'ouverture - BarChart */}
+          <Card className="lg:col-span-1 py-3 md:py-3 xl:py-5">
+            <CardHeader className="px-3 md:px-4 xl:px-5">
+              <CardTitle className="text-base md:text-lg">Jours d'ouverture</CardTitle>
+              <CardDescription>{selectedMonth}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 px-3 md:px-4 xl:px-5">
+              <AppBarChart
+                data={
+                  hideSundays
+                    ? [
+                        { name: "Ouvert", ouvert: dailyStats.openDays, fermé: 0 },
+                        { name: "Fermé", ouvert: 0, fermé: dailyStats.closedDays },
+                      ]
+                    : [
+                        { name: "Ouvert", ouvert: dailyStats.openDays, fermé: 0, dimanche: 0 },
+                        { name: "Fermé", ouvert: 0, fermé: dailyStats.closedDays, dimanche: dailyStats.sundayDays },
+                      ]
+                }
+                hideSundays={hideSundays}
+              />
+            </CardContent>
+            {/* Légende personnalisée */}
+            <div className="flex flex-wrap gap-3 md:gap-4 justify-center">
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: "#ef4444" }}></div>
-                <span className="text-sm">0€</span>
-                <span className="text-sm font-bold ml-auto">{dailyStats.distribution.zero}</span>
+                <div className="w-4 h-4 rounded-sm bg-emerald-600"></div>
+                <span className="text-xs md:text-sm font-medium">Ouvert</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: "#fbbf24" }}></div>
-                <span className="text-sm">{'< 300€'}</span>
-                <span className="text-sm font-bold ml-auto">{dailyStats.distribution.lessThan300}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: "#86efac" }}></div>
-                <span className="text-sm">300-399€</span>
-                <span className="text-sm font-bold ml-auto">{dailyStats.distribution.between300And400}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: "#16a34a" }}></div>
-                <span className="text-sm">{'≥ 400€'}</span>
-                <span className="text-sm font-bold ml-auto">{dailyStats.distribution.greaterOrEqual400}</span>
+                <div className="w-4 h-4 rounded-sm bg-red-500"></div>
+                <span className="text-xs md:text-sm font-medium">Fermé</span>
               </div>
               {!hideSundays && (
                 <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 rounded-sm" style={{ backgroundColor: "#9ca3af" }}></div>
-                  <span className="text-sm">Dimanche</span>
-                  <span className="text-sm font-bold ml-auto">{dailyStats.distribution.sunday}</span>
+                  <div className="w-4 h-4 rounded-sm bg-gray-400"></div>
+                  <span className="text-xs md:text-sm font-medium">Dimanche</span>
                 </div>
               )}
             </div>
-          </div>
+          </Card>
+
+          {/* Distribution des revenus par jour - PieChart */}
+          <Card className="lg:col-span-1 py-3 md:py-3 xl:py-5">
+            <CardHeader className="px-3 md:px-4 xl:px-5">
+              <CardTitle className="text-base md:text-lg">Distribution</CardTitle>
+              <CardDescription>Revenus par jour</CardDescription>
+            </CardHeader>
+            <CardContent className="px-3 md:px-4 xl:px-5">
+              <AppPieChart
+                data={
+                  hideSundays
+                    ? [
+                        { name: "0€", value: dailyStats.distribution.zero },
+                        { name: "< 300€", value: dailyStats.distribution.lessThan300 },
+                        { name: ">300€", value: dailyStats.distribution.between300And400 },
+                        { name: "≥ 400€", value: dailyStats.distribution.greaterOrEqual400 },
+                      ]
+                    : [
+                        { name: "0€", value: dailyStats.distribution.zero },
+                        { name: "< 300€", value: dailyStats.distribution.lessThan300 },
+                        { name: ">300€", value: dailyStats.distribution.between300And400 },
+                        { name: "≥ 400€", value: dailyStats.distribution.greaterOrEqual400 },
+                        { name: "Dimanche", value: dailyStats.distribution.sunday },
+                      ]
+                }
+                colors={["#ef4444", "#fbbf24", "#86efac", "#16a34a", "#9ca3af"]}
+                hideSundays={hideSundays}
+              />
+            </CardContent>
+          </Card>
+
+          {/* KPIs */}
+          <Card className="lg:col-span-1 py-3 md:py-3 xl:py-5">
+            <CardHeader className="px-3 md:px-4 xl:px-5">
+              <CardTitle className="text-base md:text-lg">Indicateurs</CardTitle>
+              <CardDescription>Résumé financier</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3 px-3 md:px-4 xl:px-5">
+              <div className="space-y-1">
+                <p className="text-xs md:text-sm text-muted-foreground">Chiffre d'affaires TTC</p>
+                <p className="text-2xl md:text-3xl font-bold text-emerald-600">{fmt.format(totalRevenue)}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs md:text-sm text-muted-foreground">Dépenses totales</p>
+                <p className="text-2xl md:text-3xl font-bold text-red-600">{fmt.format(totalExpenses)}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-xs md:text-sm text-muted-foreground">Moyenne journalière</p>
+                <p className="text-2xl md:text-3xl font-bold text-blue-600">{fmt.format(dailyStats.averageDaily)}</p>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        {/* KDI's */}
-        <div className="bg-white dark:bg-slate-900 rounded-lg p-4 shadow">
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow">
-            <div className="text-sm text-slate-500 mb-2">Chiffre d'affaires TTC</div>
-            <div className="text-4xl font-bold text-emerald-600">{fmt.format(totalRevenue)}</div>
-          </div>
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-4 shadow">
-            <div className="text-sm text-slate-500 mb-2">Dépenses totales</div>
-            <div className="text-4xl font-bold text-red-600">{fmt.format(totalExpenses)}</div>
-          </div>
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-4 shadow">
-            <div className="text-sm text-slate-500 mb-2">Moyenne journalière</div>
-            <div className="text-4xl font-bold text-blue-600">{fmt.format(dailyStats.averageDaily)}</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Chart détaillé par jour */}
-      <div className="bg-white dark:bg-slate-900 rounded-lg p-6 shadow">
-        <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold">Entrées par jour ({selectedMonth})</h3>
-          <label className="flex items-center gap-2 cursor-pointer">
-            <input
-              type="checkbox"
-              checked={hideSundaysInChart}
-              onChange={(e) => setHideSundaysInChart(e.target.checked)}
-              className="w-4 h-4 cursor-pointer"
+        {/* Chart détaillé par jour */}
+        <Card className="py-3 md:py-3 xl:py-5">
+          <CardHeader className="px-3 md:px-4 xl:px-5">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <CardTitle className="text-base md:text-lg">Entrées par jour</CardTitle>
+                <CardDescription>{selectedMonth}</CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="hide-sundays-chart"
+                  checked={hideSundaysInChart}
+                  onCheckedChange={(checked) => setHideSundaysInChart(checked as boolean)}
+                />
+                <Label htmlFor="hide-sundays-chart" className="text-xs md:text-sm cursor-pointer">
+                  Masquer les dimanches
+                </Label>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="px-3 md:px-4 xl:px-5">
+            <AppLineChart
+              data={dailyRevenuesData}
+              formatter={(value) => fmt.format(value)}
+              thresholdLine={{ value: 300, label: "Seuil 300€" }}
             />
-            <span className="text-sm text-slate-600 dark:text-slate-300">Masquer les dimanches</span>
-          </label>
-        </div>
-        <ResponsiveContainer width="100%" height={400}>
-          <LineChart data={dailyRevenuesData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="day" label={{ value: "Jour du mois", position: "insideBottomRight", offset: -5 }} />
-            <YAxis label={{ value: "Montant (€)", angle: -90, position: "insideLeft" }} />
-            <Tooltip formatter={(value) => fmt.format(value as number)} />
-            <Legend />
-            <Line type="monotone" dataKey="revenue" stroke="#10b981" strokeWidth={2} name="Revenus TTC" dot={false} />
-          </LineChart>
-        </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
     </main>
   );

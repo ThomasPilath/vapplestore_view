@@ -48,30 +48,32 @@ export default function Reports() {
   });
 
   return (
-    <div className="flex flex-col h-screen">
-      <div className="flex p-4 justify-between items-center gap-2">
-        <div className="flex gap-2 absolute">
-          <Button variant={"secondary"} onClick={() => setOpenRevenue(true)}>
-            + ENTREE
-          </Button>
-          <Button variant={"secondary"} onClick={() => setOpenPurchase(true)}>
-            + SORTIE
-          </Button>
+    <div className="flex-1 overflow-auto p-4 md:p-6 bg-slate-50 dark:bg-slate-950">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header avec titre et boutons */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+          <h2 className="text-2xl md:text-3xl font-bold text-center md:text-left">RAPPORTS</h2>
+          <div className="flex gap-2">
+            <Button variant={"default"} onClick={() => setOpenRevenue(true)}>
+              + ENTRÉE
+            </Button>
+            <Button variant={"default"} onClick={() => setOpenPurchase(true)}>
+              + SORTIE
+            </Button>
+          </div>
         </div>
-        <h2 className="h-auto w-min mx-auto text-2xl font-bold m-2 p-2 border-2 rounded-2xl border-slate-500">RAPPORTS</h2>
-      </div>
 
-      <main className="p-6">
-        <section className="mb-6">
+        {/* Historique des entrées */}
+        <section>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <h3 className="text-lg font-semibold">Historique des entrées</h3>
+            <h3 className="text-lg md:text-xl font-semibold">Historique des entrées</h3>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Input
                 type="month"
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(e.target.value)}
-                className="text-sm max-w-xs"
+                className="text-sm w-full sm:w-auto sm:max-w-xs"
               />
               <Button
                 variant="outline"
@@ -92,31 +94,33 @@ export default function Reports() {
           </div>
 
           {sortedEntries.length === 0 ? (
-            <div className="text-sm text-slate-500 py-8 text-center">Aucun envoi correspondant au filtre.</div>
+            <div className="text-sm text-muted-foreground py-8 text-center border rounded-lg">
+              Aucune entrée correspondant au filtre.
+            </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Base 20%</TableHead>
-                    <TableHead>TVA 20%</TableHead>
-                    <TableHead>Base 5,5%</TableHead>
-                    <TableHead>TVA 5,5%</TableHead>
-                    <TableHead>Total HT</TableHead>
-                    <TableHead className="text-right">Total TTC</TableHead>
+                    <TableHead className="min-w-[100px]">Date</TableHead>
+                    <TableHead className="min-w-[100px]">Base 20%</TableHead>
+                    <TableHead className="min-w-[100px]">TVA 20%</TableHead>
+                    <TableHead className="min-w-[100px]">Base 5,5%</TableHead>
+                    <TableHead className="min-w-[100px]">TVA 5,5%</TableHead>
+                    <TableHead className="min-w-[100px]">Total HT</TableHead>
+                    <TableHead className="text-right min-w-[120px]">Total TTC</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sortedEntries.map((e) => (
                     <TableRow key={e.id}>
-                      <TableCell>{new Date(e.date).toLocaleDateString("fr-FR")}</TableCell>
+                      <TableCell className="font-medium">{new Date(e.date).toLocaleDateString("fr-FR")}</TableCell>
                       <TableCell>{fmt.format(e.base20)}</TableCell>
                       <TableCell>{fmt.format(e.tva20)}</TableCell>
                       <TableCell>{fmt.format(e.base5_5)}</TableCell>
                       <TableCell>{fmt.format(e.tva5_5)}</TableCell>
                       <TableCell>{fmt.format(e.ht)}</TableCell>
-                      <TableCell className="text-right font-extrabold text-emerald-600">{fmt.format(e.ttc)}</TableCell>
+                      <TableCell className="text-right font-bold text-emerald-600">{fmt.format(e.ttc)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -125,16 +129,17 @@ export default function Reports() {
           )}
         </section>
 
-        <section className="mb-6">
+        {/* Historique des achats */}
+        <section>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <h3 className="text-lg font-semibold">Historique des achats</h3>
+            <h3 className="text-lg md:text-xl font-semibold">Historique des achats</h3>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Input
                 type="month"
                 value={filterMonth}
                 onChange={(e) => setFilterMonth(e.target.value)}
-                className="text-sm max-w-xs"
+                className="text-sm w-full sm:w-auto sm:max-w-xs"
               />
               <Button
                 variant="outline"
@@ -155,27 +160,29 @@ export default function Reports() {
           </div>
 
           {sortedPurchases.length === 0 ? (
-            <div className="text-sm text-slate-500 py-8 text-center">Aucun achat correspondant au filtre.</div>
+            <div className="text-sm text-muted-foreground py-8 text-center border rounded-lg">
+              Aucun achat correspondant au filtre.
+            </div>
           ) : (
-            <div className="rounded-md border">
+            <div className="rounded-md border overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Prix HT</TableHead>
-                    <TableHead>TVA 20%</TableHead>
-                    <TableHead>Frais de port</TableHead>
-                    <TableHead className="text-right">Total TTC</TableHead>
+                    <TableHead className="min-w-[100px]">Date</TableHead>
+                    <TableHead className="min-w-[100px]">Prix HT</TableHead>
+                    <TableHead className="min-w-[100px]">TVA 20%</TableHead>
+                    <TableHead className="min-w-[100px]">Frais de port</TableHead>
+                    <TableHead className="text-right min-w-[120px]">Total TTC</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {sortedPurchases.map((p) => (
                     <TableRow key={p.id}>
-                      <TableCell>{new Date(p.date).toLocaleDateString("fr-FR")}</TableCell>
+                      <TableCell className="font-medium">{new Date(p.date).toLocaleDateString("fr-FR")}</TableCell>
                       <TableCell>{fmt.format(p.priceHT)}</TableCell>
                       <TableCell>{fmt.format(p.tva)}</TableCell>
                       <TableCell>{fmt.format(p.shippingFee)}</TableCell>
-                      <TableCell className="text-right font-extrabold text-red-600">{fmt.format(p.ttc)}</TableCell>
+                      <TableCell className="text-right font-bold text-red-600">{fmt.format(p.ttc)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -183,19 +190,19 @@ export default function Reports() {
             </div>
           )}
         </section>
-      </main>
+      </div>
 
       {openRevenue && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setOpenRevenue(false)}>
-          <div onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpenRevenue(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md">
             <RevenueForm onSubmitted={() => setOpenRevenue(false)} onClose={() => setOpenRevenue(false)} />
           </div>
         </div>
       )}
 
       {openPurchase && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={() => setOpenPurchase(false)}>
-          <div onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={() => setOpenPurchase(false)}>
+          <div onClick={(e) => e.stopPropagation()} className="w-full max-w-md">
             <PurchaseForm onSubmitted={() => setOpenPurchase(false)} onClose={() => setOpenPurchase(false)} />
           </div>
         </div>
