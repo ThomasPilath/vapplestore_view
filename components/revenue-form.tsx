@@ -21,7 +21,8 @@ type RevenueFormProps = {
  * Permet d'ajouter les revenus avec supports pour TVA 20% et 5.5%
  */
 export default function RevenueForm({ onSubmitted, onClose }: RevenueFormProps) {
-  const addEntry = storeRevenue((s) => s.addEntry);
+  // Extraire seulement addEntry pour éviter les re-renders sur tout changement du store
+  const addEntry = storeRevenue.getState().addEntry;
 
   // Initialiser avec la date du jour
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -35,22 +36,42 @@ export default function RevenueForm({ onSubmitted, onClose }: RevenueFormProps) 
   const [base5_5, setBase5_5] = useState<string>("");
   const [tva5_5, setTva5_5] = useState<string>("");
 
+  // État de soumission
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   // Calculs automatiques
-  const ht = useMemo(() => Number(base20 || 0) + Number(base5_5 || 0), [base20, base5_5]);
-  const tvaTotal = useMemo(() => Number(tva20 || 0) + Number(tva5_5 || 0), [tva20, tva5_5]);
-  const ttc = useMemo(() => ht + tvaTotal, [ht, tvaTotal]);
+  const ht = Number(base20 || 0) + Number(base5_5 || 0)
+  const tvaTotal = Number(tva20 || 0) + Number(tva5_5 || 0)
+  const ttc = ht + tvaTotal
 
-  const handleSubmit = () => {
-    addEntry({ date, base20: Number(base20 || 0), tva20: Number(tva20 || 0), base5_5: Number(base5_5 || 0), tva5_5: Number(tva5_5 || 0), ht, ttc });
-    
-    // Réinitialiser le formulaire
-    setDate(todayISO);
-    setBase20("");
-    setTva20("");
-    setBase5_5("");
-    setTva5_5("");
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await addEntry({
+        date,
+        base20: Number(base20 || 0),
+        tva20: Number(tva20 || 0),
+        base5_5: Number(base5_5 || 0),
+        tva5_5: Number(tva5_5 || 0),
+        ht,
+        ttc,
+      });
 
-    onSubmitted?.();
+      // Réinitialiser le formulaire
+      setDate(todayISO);
+      setBase20("");
+      setTva20("");
+      setBase5_5("");
+      setTva5_5("");
+
+      onSubmitted?.();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Erreur lors de l'enregistrement");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -145,10 +166,13 @@ export default function RevenueForm({ onSubmitted, onClose }: RevenueFormProps) 
         </div>
       </div>
 
+      {/* Message d'erreur */}
+      {submitError && <p className="mb-3 text-sm text-red-500">{submitError}</p>}
+
       {/* Boutons d'action */}
       <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={handleSubmit}>
-          Envoyer
+        <Button variant="secondary" onClick={handleSubmit} disabled={isSubmitting}>
+          {isSubmitting ? "Envoi..." : "Envoyer"}
         </Button>
       </div>
     </div>

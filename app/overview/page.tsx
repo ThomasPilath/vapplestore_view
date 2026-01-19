@@ -24,6 +24,8 @@ const currencyFormatter = new Intl.NumberFormat("fr-FR", { style: "currency", cu
  */
 export default function Overview() {
   const entries = storeRevenue((s) => s.entries)
+  const revenueLoading = storeRevenue((s) => s.loading)
+  const purchaseLoading = storePurchase((s) => s.loading)
   const purchases = storePurchase((s) => s.entries)
   const hideSundays = storeSettings((s) => s.hideSundays)
 
@@ -31,6 +33,12 @@ export default function Overview() {
   const currentMonth = today.toISOString().slice(0, 7) // YYYY-MM
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
   const [hideSundaysInChart, setHideSundaysInChart] = useState(hideSundays)
+
+  // Charger les données au démarrage
+  useEffect(() => {
+    storeRevenue.getState().fetchEntries()
+    storePurchase.getState().fetchEntries()
+  }, [])
 
   // Synchroniser l'état local avec le paramètre global
   useEffect(() => {
@@ -120,6 +128,18 @@ export default function Overview() {
 
     return data
   }, [entries, selectedMonth, hideSundaysInChart])
+
+  // Afficher un indicateur de chargement pendant le fetch initial
+  if (revenueLoading || purchaseLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Chargement des données...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <main className="flex-1 overflow-auto p-3 md:p-5 bg-slate-50 dark:bg-slate-950">

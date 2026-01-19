@@ -31,8 +31,6 @@ const useMediaQuery = (query: string) => {
   const [matches, setMatches] = useState(false)
 
   useEffect(() => {
-    if (typeof window === "undefined") return
-
     const mq = window.matchMedia(query)
     const handleChange = (event: MediaQueryListEvent) => setMatches(event.matches)
 
@@ -50,8 +48,8 @@ export default function AppLineChart({
   formatter,
   thresholdLine = { value: 300, label: "300" },
 }: AppLineChartProps) {
-  const isMobile = useMediaQuery("(max-width: 768px)")
   const [weekIndex, setWeekIndex] = useState(0)
+  const isMobile = useMediaQuery("(max-width: 768px)")
 
   useEffect(() => {
     if (!isMobile) {
@@ -79,7 +77,7 @@ export default function AppLineChart({
     const startDay = displayData[0].day
     const endDay = displayData[displayData.length - 1].day
     return `Semaine du ${startDay} au ${endDay}`
-  }, [displayData, isMobile])
+  }, [displayData, isMobile, weekIndex])
 
   return (
     <div className="w-full">

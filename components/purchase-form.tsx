@@ -21,7 +21,8 @@ type PurchaseFormProps = {
  * Permet d'ajouter les dépenses avec calculs automatiques de TVA et frais
  */
 export default function PurchaseForm({ onSubmitted, onClose }: PurchaseFormProps) {
-  const addEntry = storePurchase((s) => s.addEntry);
+  // Extraire seulement addEntry pour éviter les re-renders sur tout changement du store
+  const addEntry = storePurchase.getState().addEntry;
 
   // Initialiser avec la date du jour
   const todayISO = new Date().toISOString().slice(0, 10);
@@ -32,25 +33,37 @@ export default function PurchaseForm({ onSubmitted, onClose }: PurchaseFormProps
   const [tva, setTva] = useState<string>("");
   const [shippingFee, setShippingFee] = useState<string>("");
 
+  // État de soumission
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+
   // Calcul automatique du total TTC
-  const ttc = useMemo(() => Number(priceHT || 0) + Number(tva || 0) + Number(shippingFee || 0), [priceHT, tva, shippingFee]);
+  const ttc = Number(priceHT || 0) + Number(tva || 0) + Number(shippingFee || 0);
 
-  const handleSubmit = () => {
-    addEntry({ 
-      date, 
-      priceHT: Number(priceHT || 0), 
-      tva: Number(tva || 0), 
-      shippingFee: Number(shippingFee || 0), 
-      ttc 
-    });
-    
-    // Réinitialiser le formulaire
-    setDate(todayISO);
-    setPriceHT("");
-    setTva("");
-    setShippingFee("");
+  const handleSubmit = async () => {
+    setIsSubmitting(true);
+    setSubmitError(null);
+    try {
+      await addEntry({
+        date,
+        priceHT: Number(priceHT || 0),
+        tva: Number(tva || 0),
+        shippingFee: Number(shippingFee || 0),
+        ttc,
+      });
 
-    onSubmitted?.();
+      // Réinitialiser le formulaire
+      setDate(todayISO);
+      setPriceHT("");
+      setTva("");
+      setShippingFee("");
+
+      onSubmitted?.();
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : "Erreur lors de l'enregistrement");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -129,10 +142,13 @@ export default function PurchaseForm({ onSubmitted, onClose }: PurchaseFormProps
         </div>
       </div>
 
+      {/* Message d'erreur */}
+      {submitError && <p className="mb-3 text-sm text-red-500">{submitError}</p>}
+
       {/* Boutons d'action */}
       <div className="flex justify-end gap-2">
-        <Button variant="secondary" onClick={handleSubmit}>
-          Envoyer
+        <Button variant="secondary" onClick={handleSubmit} disabled={isSubmitting}>
+          {isSubmitting ? "Envoi..." : "Envoyer"}
         </Button>
       </div>
     </div>

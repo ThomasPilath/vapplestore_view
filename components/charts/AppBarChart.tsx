@@ -31,7 +31,7 @@ interface AppBarChartProps {
 export default function AppBarChart({ data, hideSundays }: AppBarChartProps) {
   // Renderer pour afficher un label centré uniquement si la valeur > 0
   const renderCenteredValue = (props: any) => {
-    const { value, x, y, width, height } = props
+    const { value, x, y, width, height } = props as {value?: number; x?: number; y?: number; width?: number; height?: number}
     if (!value || value <= 0 || x === undefined || y === undefined || width === undefined || height === undefined) {
       return null
     }

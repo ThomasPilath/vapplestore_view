@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,13 +21,31 @@ const fmt = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" 
 export default function Reports() {
   const [openRevenue, setOpenRevenue] = useState(false);
   const [openPurchase, setOpenPurchase] = useState(false);
+  const [filterMonth, setFilterMonth] = useState<string>(new Date().toISOString().slice(0, 7));
+  const [sortAsc, setSortAsc] = useState<boolean>(false);
+
   const entries = storeRevenue((s) => s.entries);
   const purchases = storePurchase((s) => s.entries);
+  const revenueLoading = storeRevenue((s) => s.loading);
+  const purchaseLoading = storePurchase((s) => s.loading);
 
-  // filtre et tri
-  const today = new Date().toISOString().slice(0, 7); // YYYY-MM format
-  const [filterMonth, setFilterMonth] = useState<string>(today);
-  const [sortAsc, setSortAsc] = useState<boolean>(false);
+  // Charger les données au démarrage
+  useEffect(() => {
+    storeRevenue.getState().fetchEntries();
+    storePurchase.getState().fetchEntries();
+  }, []);
+
+  // Afficher un indicateur de chargement pendant le fetch initial
+  if (revenueLoading || purchaseLoading) {
+    return (
+      <div className="flex-1 flex items-center justify-center p-8">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Chargement des données...</p>
+        </div>
+      </div>
+    )
+  }
 
   const filteredEntries = entries.filter((e) => {
     if (!filterMonth) return true;
