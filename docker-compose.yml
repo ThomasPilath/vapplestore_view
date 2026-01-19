@@ -7,7 +7,7 @@ services:
     env_file:
       - .env
     ports:
-      - "3000:3000"
+      - "6413:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
@@ -25,6 +25,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env
+    ports:
+      - "6464:3306"
     environment:
       MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?set in .env}
       MARIADB_DATABASE: ${DATABASE_NAME:?set in .env}
