@@ -1,0 +1,14 @@
+node_modules
+.next
+out
+.git
+.gitignore
+.github
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-store
+.tmp
+.env
+.env.local
+Dockerfile

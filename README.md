@@ -79,6 +79,67 @@ npm run lint
 
 Projet créé par **PILATH**. Toute contribution est la bienvenue : ouvrez une issue ou une pull request.
 
----
 
 Bonne exploration — si vous avez besoin d'aide contactez moi. 💡
+
+---
+
+## Docker & stack MariaDB 🐳
+
+### Configuration initiale (obligatoire)
+
+1. **Créer le fichier `.env`** depuis le template :
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Renseigner les secrets** dans `.env` :
+   - `DOCKERHUB_USERNAME` : ton identifiant Docker Hub
+   - `DATABASE_NAME` : nom de la base de données
+   - `DATABASE_USER` : nom d'utilisateur pour l'app
+   - `DATABASE_PASSWORD` : mot de passe de l'app (à choisir)
+   - `MARIADB_ROOT_PASSWORD` : mot de passe root MariaDB (à choisir)
+
+⚠️ **Sécurité** : Le fichier `.env` est ignoré par git. Ne jamais commiter de secrets !
+
+### Construire et lancer en local
+
+```bash
+# Build l'image locale
+docker compose build
+
+# Démarre l'app + MariaDB (ports 3000 et 3306 exposés)
+docker compose up
+
+# Ou en mode détaché
+docker compose up -d
+```
+
+La stack complète démarre avec :
+- **App Next.js** : `http://localhost:3000`
+- **MariaDB 11** : `localhost:3306` (accessible avec les credentials du `.env`)
+- **Volume persistant** : `mariadb_data` pour conserver les données DB
+
+### Publication automatique sur Docker Hub (CI/CD GitHub Actions)
+
+Le workflow `.github/workflows/docker-publish.yml` build et publie automatiquement l'image sur Docker Hub.
+
+**Configuration des secrets GitHub** (une seule fois) :
+
+1. Va dans **Settings** → **Secrets and variables** → **Actions**
+2. Ajoute :
+   - `DOCKERHUB_USERNAME` : ton nom d'utilisateur Docker Hub
+   - `DOCKERHUB_TOKEN` : un [access token Docker Hub](https://hub.docker.com/settings/security) avec droits de push
+
+**Déclenchement du workflow** :
+- ✅ Automatique sur `push` vers `main`
+- ✅ Sur les tags `v*` (releases)
+- ✅ Manuellement via **Actions** → **Run workflow** (sur n'importe quelle branche)
+
+**Tags d'images générés** :
+- `pilath/vapplestore-view:latest` (branche main uniquement)
+- `pilath/vapplestore-view:main` (nom de branche)
+- `pilath/vapplestore-view:sha-abc1234` (hash de commit)
+- `pilath/vapplestore-view:v1.0.0` (si tag git)
+
+**Suivi** : Consulte l'onglet **Actions** sur GitHub pour voir les logs de build en temps réel.
