@@ -22,9 +22,12 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV NEXT_TELEMETRY_DISABLED=1
-COPY --from=builder /app/public ./public
+# Copy build artifacts from builder stage
 COPY --from=builder /app/.next ./.next
-COPY package.json package-lock.json* ./
+COPY --from=builder /app/package.json /app/package-lock.json* ./
+# Copy public files if they exist, otherwise create empty public dir
+RUN mkdir -p ./public
+COPY --from=builder /app/public/ ./public/ 2>/dev/null || true
 COPY --from=deps /app/node_modules ./node_modules
 EXPOSE 3000
 CMD ["npm", "run", "start"]
