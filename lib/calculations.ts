@@ -54,7 +54,7 @@ export const isSunday = (year: number, month: number, day: number): boolean => {
  * @returns Statistiques du mois
  */
 export const calculateDailyStats = (
-  entries: Array<{ date: string; ttc: number }>,
+  entries: Array<{ date: string; totalTTC: number }>,
   selectedMonth: string,
   hideSundays: boolean
 ): DailyStats => {
@@ -67,7 +67,7 @@ export const calculateDailyStats = (
     if (e.date.startsWith(selectedMonth)) {
       const day = parseInt(e.date.split("-")[2], 10)
       const existing = revenueByDay.get(day) || 0
-      revenueByDay.set(day, existing + e.ttc)
+      revenueByDay.set(day, existing + e.totalTTC)
     }
   })
 

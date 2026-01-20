@@ -41,9 +41,9 @@ export default function RevenueForm({ onSubmitted, onClose }: RevenueFormProps) 
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Calculs automatiques
-  const ht = Number(base20 || 0) + Number(base5_5 || 0)
+  const totalHT = Number(base20 || 0) + Number(base5_5 || 0)
   const tvaTotal = Number(tva20 || 0) + Number(tva5_5 || 0)
-  const ttc = ht + tvaTotal
+  const totalTTC = totalHT + tvaTotal
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -55,8 +55,6 @@ export default function RevenueForm({ onSubmitted, onClose }: RevenueFormProps) 
         tva20: Number(tva20 || 0),
         base5_5: Number(base5_5 || 0),
         tva5_5: Number(tva5_5 || 0),
-        ht,
-        ttc,
       });
 
       // Réinitialiser le formulaire
@@ -157,12 +155,12 @@ export default function RevenueForm({ onSubmitted, onClose }: RevenueFormProps) 
       <div className="mb-4 flex justify-between items-center">
         <div>
           <div className="text-sm text-slate-500">Chiffre d'affaires HT</div>
-          <div className="text-xl font-semibold text-slate-700 dark:text-slate-200">{currencyFormatter.format(ht)}</div>
+          <div className="text-xl font-semibold text-slate-700 dark:text-slate-200">{currencyFormatter.format(totalHT)}</div>
         </div>
 
         <div>
           <div className="text-sm text-slate-500">Chiffre d'affaires TTC</div>
-          <div className="text-xl font-semibold text-slate-700 dark:text-slate-200">{currencyFormatter.format(ttc)}</div>
+          <div className="text-xl font-semibold text-slate-700 dark:text-slate-200">{currencyFormatter.format(totalTTC)}</div>
         </div>
       </div>
 

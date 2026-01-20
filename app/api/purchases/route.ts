@@ -3,6 +3,36 @@ import { randomUUID } from "crypto";
 import { query } from "@/lib/db";
 import { CreatePurchaseSchema } from "@/lib/validators";
 import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api-response";
+import { initializeDatabase } from "@/lib/db-init";
+
+function mapPurchaseRow(row: any) {
+  return {
+    id: row.id,
+    date: row.date instanceof Date ? row.date.toISOString().slice(0, 10) : row.date,
+    totalHT: Number(row.totalHT ?? 0),
+    tva: Number(row.tva ?? 0),
+    shippingFee: Number(row.shippingFee ?? 0),
+    totalTTC: Number(row.totalTTC ?? 0),
+    createdAt: row.createdAt instanceof Date
+      ? row.createdAt.toISOString()
+      : row.createdAt,
+    updatedAt: row.updatedAt instanceof Date
+      ? row.updatedAt.toISOString()
+      : row.updatedAt,
+  };
+}
+
+async function safeQuery(sql: string, params: any[] = []) {
+  try {
+    return await query(sql, params);
+  } catch (error: any) {
+    if (error?.code === "ER_NO_SUCH_TABLE") {
+      await initializeDatabase();
+      return await query(sql, params);
+    }
+    throw error;
+  }
+}
 
 /**
  * GET /api/purchases
@@ -22,8 +52,9 @@ export async function GET(req: NextRequest) {
       params.push(month);
     }
 
-    const results = await query(sql, params);
-    return successResponse(results);
+    const results = await safeQuery(sql, params);
+    const mapped = Array.isArray(results) ? results.map(mapPurchaseRow) : [];
+    return successResponse(mapped);
   } catch (error) {
     console.error("❌ GET /api/purchases error:", error);
     return errorResponse("Failed to fetch purchases", 500);
@@ -42,28 +73,30 @@ export async function POST(req: NextRequest) {
     const validatedData = CreatePurchaseSchema.parse(body);
 
     const id = randomUUID();
-    const createdAt = new Date().toISOString().slice(0, 19).replace('T', ' ');
+    const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     const sql = `
-      INSERT INTO purchases (id, date, priceHT, tva, shippingFee, ttc, createdAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO purchases (id, date, totalHT, tva, shippingFee, totalTTC, createdAt, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    await query(sql, [
+    await safeQuery(sql, [
       id,
       validatedData.date,
-      validatedData.priceHT,
+      validatedData.totalHT,
       validatedData.tva,
       validatedData.shippingFee,
-      validatedData.ttc,
-      createdAt,
+      validatedData.totalTTC,
+      timestamp,
+      timestamp,
     ]);
 
     return successResponse(
       {
         id,
         ...validatedData,
-        createdAt,
+        createdAt: timestamp,
+        updatedAt: timestamp,
       },
       201
     );

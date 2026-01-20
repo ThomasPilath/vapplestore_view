@@ -10,8 +10,6 @@ export const CreateRevenueSchema = z.object({
   tva20: z.number().min(0, "tva20 must be positive"),
   base5_5: z.number().min(0, "base5_5 must be positive"),
   tva5_5: z.number().min(0, "tva5_5 must be positive"),
-  ht: z.number().min(0, "ht must be positive"),
-  ttc: z.number().min(0, "ttc must be positive"),
 });
 
 export type CreateRevenueInput = z.infer<typeof CreateRevenueSchema>;
@@ -22,6 +20,7 @@ export type CreateRevenueInput = z.infer<typeof CreateRevenueSchema>;
 export const RevenueSchema = CreateRevenueSchema.extend({
   id: z.string().uuid(),
   createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 export type Revenue = z.infer<typeof RevenueSchema>;
@@ -31,10 +30,10 @@ export type Revenue = z.infer<typeof RevenueSchema>;
  */
 export const CreatePurchaseSchema = z.object({
   date: z.string().date("Date must be in YYYY-MM-DD format"),
-  priceHT: z.number().min(0, "priceHT must be positive"),
+  totalHT: z.number().min(0, "totalHT must be positive"),
   tva: z.number().min(0, "tva must be positive"),
   shippingFee: z.number().min(0, "shippingFee must be positive"),
-  ttc: z.number().min(0, "ttc must be positive"),
+  totalTTC: z.number().min(0, "totalTTC must be positive"),
 });
 
 export type CreatePurchaseInput = z.infer<typeof CreatePurchaseSchema>;
@@ -45,6 +44,7 @@ export type CreatePurchaseInput = z.infer<typeof CreatePurchaseSchema>;
 export const PurchaseSchema = CreatePurchaseSchema.extend({
   id: z.string().uuid(),
   createdAt: z.string().datetime(),
+  updatedAt: z.string().datetime(),
 });
 
 export type Purchase = z.infer<typeof PurchaseSchema>;

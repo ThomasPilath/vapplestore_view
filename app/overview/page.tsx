@@ -52,14 +52,14 @@ export default function Overview() {
     entries.forEach((e) => {
       const month = e.date.slice(0, 7)
       const existing = map.get(month) || { month, revenue: 0, expenses: 0 }
-      existing.revenue += e.ttc
+      existing.revenue += e.totalTTC
       map.set(month, existing)
     })
 
     purchases.forEach((p) => {
       const month = p.date.slice(0, 7)
       const existing = map.get(month) || { month, revenue: 0, expenses: 0 }
-      existing.expenses += p.ttc
+      existing.expenses += p.totalTTC
       map.set(month, existing)
     })
 
@@ -76,7 +76,7 @@ export default function Overview() {
     () =>
       entries
         .filter((e) => e.date.startsWith(selectedMonth))
-        .reduce((sum, e) => sum + e.ttc, 0),
+        .reduce((sum, e) => sum + e.totalTTC, 0),
     [entries, selectedMonth]
   )
 
@@ -84,7 +84,7 @@ export default function Overview() {
     () =>
       purchases
         .filter((p) => p.date.startsWith(selectedMonth))
-        .reduce((sum, p) => sum + p.ttc, 0),
+        .reduce((sum, p) => sum + p.totalTTC, 0),
     [purchases, selectedMonth]
   )
 
@@ -108,7 +108,7 @@ export default function Overview() {
       if (e.date.startsWith(selectedMonth)) {
         const day = parseInt(e.date.split("-")[2], 10)
         const existing = revenueByDay.get(day) || 0
-        revenueByDay.set(day, existing + e.ttc)
+        revenueByDay.set(day, existing + e.totalTTC)
       }
     })
 

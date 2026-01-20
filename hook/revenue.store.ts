@@ -4,6 +4,28 @@ import { revenueAPI } from "@/lib/api-client";
 
 export type { RevenueEntry };
 
+const computeRevenue = (entry: any): RevenueEntry => {
+  const base20 = Number(entry.base20 ?? 0);
+  const tva20 = Number(entry.tva20 ?? 0);
+  const base5_5 = Number(entry.base5_5 ?? 0);
+  const tva5_5 = Number(entry.tva5_5 ?? 0);
+  const totalHT = base20 + base5_5;
+  const totalTTC = totalHT + tva20 + tva5_5;
+
+  return {
+    id: entry.id,
+    date: entry.date,
+    base20,
+    tva20,
+    base5_5,
+    tva5_5,
+    createdAt: entry.createdAt,
+    updatedAt: entry.updatedAt ?? entry.createdAt,
+    totalHT,
+    totalTTC,
+  };
+};
+
 type RevenueStore = {
   entries: RevenueEntry[];
   loading: boolean;
@@ -25,7 +47,8 @@ export const storeRevenue = create<RevenueStore>((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await revenueAPI.getAll();
-      set({ entries: data || [], loading: false });
+      const mapped = Array.isArray(data) ? data.map(computeRevenue) : [];
+      set({ entries: mapped, loading: false });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Erreur lors de la récupération";
       set({ error: errorMsg, loading: false, entries: [] });
@@ -39,7 +62,7 @@ export const storeRevenue = create<RevenueStore>((set) => ({
     try {
       const newEntry = await revenueAPI.create(entry);
       set((state) => ({
-        entries: [newEntry, ...state.entries],
+        entries: [computeRevenue(newEntry), ...state.entries],
         error: null,
       }));
     } catch (error) {

@@ -5,49 +5,50 @@
 
 /**
  * Entrée de chiffre d'affaires
- * Représente une vente avec détails TVA (taux multiples)
- * Structure prête pour envoi à une API/base de données
+ * Stocke uniquement les bases et TVA; les totaux sont calculés à l'affichage
  */
 export type RevenueEntry = {
-  /** ID unique (à remplacer par UUID en production) */
   id: string;
-  /** Date de la saisie au format ISO (YYYY-MM-DD) */
   date: string;
-  /** Base HT pour taux de TVA 20% */
   base20: number;
-  /** TVA 20% */
   tva20: number;
-  /** Base HT pour taux de TVA 5.5% */
   base5_5: number;
-  /** TVA 5.5% */
   tva5_5: number;
-  /** Total HT (somme des bases) */
-  ht: number;
-  /** Total TTC (HT + TVA) */
-  ttc: number;
-  /** Timestamp de création ISO */
   createdAt: string;
+  updatedAt: string;
+  /** Totaux calculés côté client pour l'affichage */
+  totalHT: number;
+  totalTTC: number;
 };
 
 /**
  * Entrée d'achat/dépense
- * Représente un achat avec frais additionnels
- * Structure prête pour envoi à une API/base de données
+ * Utilise la nouvelle nomenclature (totalHT / totalTTC)
  */
 export type PurchaseEntry = {
-  /** ID unique (à remplacer par UUID en production) */
   id: string;
-  /** Date d'achat au format ISO (YYYY-MM-DD) */
   date: string;
-  /** Prix HT de la marchandise */
-  priceHT: number;
-  /** TVA 20% sur le prix */
+  totalHT: number;
   tva: number;
-  /** Frais de port/livraison */
   shippingFee: number;
-  /** Total TTC (prix HT + TVA + frais port) */
-  ttc: number;
-  /** Timestamp de création ISO */
+  totalTTC: number;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/** Rôle utilisateur (autorisation) */
+export type Role = {
+  id: string;
+  roleName: string;
+  level: number;
+};
+
+/** Compte utilisateur pour l'authentification */
+export type UserAccount = {
+  id: string;
+  username: string;
+  password: string;
+  role: string;
   createdAt: string;
 };
 
@@ -73,12 +74,23 @@ export type ApiResponse<T> = {
 
 /**
  * Payload pour créer une entrée de revenu
- * (sans id et createdAt, générés par le backend)
+ * (les totaux sont calculés côté backend/frontend)
  */
-export type CreateRevenuePayload = Omit<RevenueEntry, "id" | "createdAt">;
+export type CreateRevenuePayload = {
+  date: string;
+  base20: number;
+  tva20: number;
+  base5_5: number;
+  tva5_5: number;
+};
 
 /**
  * Payload pour créer une entrée d'achat
- * (sans id et createdAt, générés par le backend)
  */
-export type CreatePurchasePayload = Omit<PurchaseEntry, "id" | "createdAt">;
+export type CreatePurchasePayload = {
+  date: string;
+  totalHT: number;
+  tva: number;
+  shippingFee: number;
+  totalTTC: number;
+};

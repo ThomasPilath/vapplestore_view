@@ -29,7 +29,7 @@ export default function PurchaseForm({ onSubmitted, onClose }: PurchaseFormProps
   const [date, setDate] = useState<string>(todayISO);
 
   // Champs de saisie
-  const [priceHT, setPriceHT] = useState<string>("");
+  const [totalHT, setTotalHT] = useState<string>("");
   const [tva, setTva] = useState<string>("");
   const [shippingFee, setShippingFee] = useState<string>("");
 
@@ -38,7 +38,7 @@ export default function PurchaseForm({ onSubmitted, onClose }: PurchaseFormProps
   const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Calcul automatique du total TTC
-  const ttc = Number(priceHT || 0) + Number(tva || 0) + Number(shippingFee || 0);
+  const totalTTC = Number(totalHT || 0) + Number(tva || 0) + Number(shippingFee || 0);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
@@ -46,15 +46,15 @@ export default function PurchaseForm({ onSubmitted, onClose }: PurchaseFormProps
     try {
       await addEntry({
         date,
-        priceHT: Number(priceHT || 0),
+        totalHT: Number(totalHT || 0),
         tva: Number(tva || 0),
         shippingFee: Number(shippingFee || 0),
-        ttc,
+        totalTTC,
       });
 
       // Réinitialiser le formulaire
       setDate(todayISO);
-      setPriceHT("");
+      setTotalHT("");
       setTva("");
       setShippingFee("");
 
@@ -94,15 +94,15 @@ export default function PurchaseForm({ onSubmitted, onClose }: PurchaseFormProps
           />
         </div>
 
-        {/* Prix HT */}
+        {/* Total HT */}
         <div className="flex flex-col">
-          <Label htmlFor="price-ht">Prix HT</Label>
+          <Label htmlFor="price-ht">Total HT</Label>
           <Input
             id="price-ht"
             type="number"
             placeholder="0"
-            value={priceHT}
-            onChange={(e) => setPriceHT(e.target.value)}
+            value={totalHT}
+            onChange={(e) => setTotalHT(e.target.value)}
             className="mt-2"
           />
         </div>
@@ -138,7 +138,7 @@ export default function PurchaseForm({ onSubmitted, onClose }: PurchaseFormProps
       <div className="mb-4 flex justify-between items-center">
         <div>
           <div className="text-sm text-slate-500">Prix TTC</div>
-          <div className="text-xl font-semibold text-slate-700 dark:text-slate-200">{currencyFormatter.format(ttc)}</div>
+          <div className="text-xl font-semibold text-slate-700 dark:text-slate-200">{currencyFormatter.format(totalTTC)}</div>
         </div>
       </div>
 

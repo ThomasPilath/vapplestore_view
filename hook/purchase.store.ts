@@ -4,6 +4,19 @@ import { purchaseAPI } from "@/lib/api-client";
 
 export type { PurchaseEntry };
 
+const normalizePurchase = (entry: any): PurchaseEntry => {
+  return {
+    id: entry.id,
+    date: entry.date,
+    totalHT: Number(entry.totalHT ?? 0),
+    tva: Number(entry.tva ?? 0),
+    shippingFee: Number(entry.shippingFee ?? 0),
+    totalTTC: Number(entry.totalTTC ?? 0),
+    createdAt: entry.createdAt,
+    updatedAt: entry.updatedAt ?? entry.createdAt,
+  };
+};
+
 type PurchaseStore = {
   entries: PurchaseEntry[];
   loading: boolean;
@@ -25,7 +38,8 @@ export const storePurchase = create<PurchaseStore>((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await purchaseAPI.getAll();
-      set({ entries: data || [], loading: false });
+      const mapped = Array.isArray(data) ? data.map(normalizePurchase) : [];
+      set({ entries: mapped, loading: false });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : "Erreur lors de la récupération";
       set({ error: errorMsg, loading: false, entries: [] });
@@ -39,7 +53,7 @@ export const storePurchase = create<PurchaseStore>((set) => ({
     try {
       const newEntry = await purchaseAPI.create(entry);
       set((state) => ({
-        entries: [newEntry, ...state.entries],
+        entries: [normalizePurchase(newEntry), ...state.entries],
         error: null,
       }));
     } catch (error) {

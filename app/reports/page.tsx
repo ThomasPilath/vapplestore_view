@@ -137,8 +137,8 @@ export default function Reports() {
                       <TableCell>{fmt.format(e.tva20)}</TableCell>
                       <TableCell>{fmt.format(e.base5_5)}</TableCell>
                       <TableCell>{fmt.format(e.tva5_5)}</TableCell>
-                      <TableCell>{fmt.format(e.ht)}</TableCell>
-                      <TableCell className="text-right font-bold text-emerald-600">{fmt.format(e.ttc)}</TableCell>
+                      <TableCell>{fmt.format(e.totalHT)}</TableCell>
+                      <TableCell className="text-right font-bold text-emerald-600">{fmt.format(e.totalTTC)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -187,7 +187,7 @@ export default function Reports() {
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-25">Date</TableHead>
-                    <TableHead className="min-w-25">Prix HT</TableHead>
+                    <TableHead className="min-w-25">Total HT</TableHead>
                     <TableHead className="min-w-25">TVA 20%</TableHead>
                     <TableHead className="min-w-25">Frais de port</TableHead>
                     <TableHead className="text-right min-w-30">Total TTC</TableHead>
@@ -197,10 +197,10 @@ export default function Reports() {
                   {sortedPurchases.map((p) => (
                     <TableRow key={p.id}>
                       <TableCell className="font-medium">{new Date(p.date).toLocaleDateString("fr-FR")}</TableCell>
-                      <TableCell>{fmt.format(p.priceHT)}</TableCell>
+                      <TableCell>{fmt.format(p.totalHT)}</TableCell>
                       <TableCell>{fmt.format(p.tva)}</TableCell>
                       <TableCell>{fmt.format(p.shippingFee)}</TableCell>
-                      <TableCell className="text-right font-bold text-red-600">{fmt.format(p.ttc)}</TableCell>
+                      <TableCell className="text-right font-bold text-red-600">{fmt.format(p.totalTTC)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
