@@ -60,14 +60,11 @@ services:
     environment:
       PMA_HOST: mariadb
       PMA_PORT: 3306
-      PMA_USER: ${DATABASE_USER}
-      PMA_PASSWORD: ${DATABASE_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
       PMA_ABSOLUTE_URI: ${PHPMYADMIN_URL:-}
       UPLOAD_LIMIT: 100M
       MEMORY_LIMIT: 512M
-      # Désactiver l'avertissement de connexion arbitraire
-      PMA_ARBITRARY: 0
+      # Activer l'écran de connexion
+      PMA_ARBITRARY: 1
     depends_on:
       mariadb:
         condition: service_healthy
