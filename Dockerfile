@@ -14,6 +14,7 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+# Build Next.js avec optimisation standalone
 RUN npm run build
 # Ensure public directory exists
 RUN mkdir -p /app/public
@@ -24,10 +25,11 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV NEXT_TELEMETRY_DISABLED=1
-# Copy build artifacts from builder stage
-COPY --from=builder /app/.next ./.next
+
+# Copy standalone build (optimized for Docker)
+COPY --from=builder /app/.next/standalone ./
+COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
-COPY package.json package-lock.json* ./
-COPY --from=deps /app/node_modules ./node_modules
+
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+CMD ["node", "server.js"]

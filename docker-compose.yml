@@ -56,7 +56,7 @@ services:
     image: phpmyadmin:latest
     restart: unless-stopped
     ports:
-      - "${PHPMYADMIN_PORT}:80"
+      - "${PHPMYADMIN_PORT:-8080}:80"
     environment:
       PMA_HOST: mariadb
       PMA_PORT: 3306
@@ -66,6 +66,8 @@ services:
       PMA_ABSOLUTE_URI: ${PHPMYADMIN_URL:-}
       UPLOAD_LIMIT: 100M
       MEMORY_LIMIT: 512M
+      # Désactiver l'avertissement de connexion arbitraire
+      PMA_ARBITRARY: 0
     depends_on:
       mariadb:
         condition: service_healthy

@@ -11,4 +11,11 @@ pnpm-store
 .tmp
 .env
 .env.local
+.env.*.local
+README.md
+BACKEND_INTEGRATION.md
+PORTAINER_DEPLOYMENT.md
+docker-compose.yml
+docker-compose.dev.yml
 Dockerfile
+.DS_Store
