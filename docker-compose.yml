@@ -1,44 +1,81 @@
+# Stack Portainer - Production
+# À copier/coller dans Portainer pour créer une stack
+# 
+# Variables à définir dans Portainer :
+# - DOCKERHUB_USERNAME : Votre nom d'utilisateur Docker Hub
+# - DATABASE_NAME : Nom de la base de données (ex: vapplestore)
+# - DATABASE_USER : Utilisateur de la base de données
+# - DATABASE_PASSWORD : Mot de passe de la DB (sécurisé)
+# - MARIADB_ROOT_PASSWORD : Mot de passe root MariaDB (sécurisé)
+# - APP_EXPOSITION_PORT : Port d'exposition de l'app (ex: 6413)
+# - PHPMYADMIN_PORT : Port d'exposition de phpMyAdmin (ex: 8080)
+# - PHPMYADMIN_URL : URL complète de phpMyAdmin (ex: https://db.tondomaine.com)
+
+version: '3.8'
+
 services:
   app:
-    image: ${DOCKERHUB_USERNAME:-pilath}/vapplestore-view:latest
-    build:
-      context: .
-      dockerfile: Dockerfile
-    env_file:
-      - .env
+    image: ${DOCKERHUB_USERNAME}/vapplestore-view:latest
+    restart: unless-stopped
     ports:
-      - "6413:3000"
+      - "${APP_EXPOSITION_PORT}:3000"
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_HOST: ${DATABASE_HOST:-mariadb}
-      DATABASE_PORT: ${DATABASE_PORT:-3306}
-      DATABASE_USER: ${DATABASE_USER:?set in .env}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD:?set in .env}
-      DATABASE_NAME: ${DATABASE_NAME:?set in .env}
+      DATABASE_HOST: mariadb
+      DATABASE_PORT: 3306
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      DATABASE_NAME: ${DATABASE_NAME}
     depends_on:
       mariadb:
         condition: service_healthy
+    networks:
+      - vapplestore_network
 
   mariadb:
     image: mariadb:11
     restart: unless-stopped
-    env_file:
-      - .env
-    ports:
-      - "6464:3306"
     environment:
-      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:?set in .env}
-      MARIADB_DATABASE: ${DATABASE_NAME:?set in .env}
-      MARIADB_USER: ${DATABASE_USER:?set in .env}
-      MARIADB_PASSWORD: ${DATABASE_PASSWORD:?set in .env}
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DATABASE_NAME}
+      MARIADB_USER: ${DATABASE_USER}
+      MARIADB_PASSWORD: ${DATABASE_PASSWORD}
     volumes:
       - mariadb_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MARIADB_ROOT_PASSWORD}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 30s
+    networks:
+      - vapplestore_network
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    restart: unless-stopped
+    ports:
+      - "${PHPMYADMIN_PORT}:80"
+    environment:
+      PMA_HOST: mariadb
+      PMA_PORT: 3306
+      PMA_USER: ${DATABASE_USER}
+      PMA_PASSWORD: ${DATABASE_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+      PMA_ABSOLUTE_URI: ${PHPMYADMIN_URL:-}
+      UPLOAD_LIMIT: 100M
+      MEMORY_LIMIT: 512M
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    networks:
+      - vapplestore_network
 
 volumes:
   mariadb_data:
+    driver: local
+
+networks:
+  vapplestore_network:
+    driver: bridge

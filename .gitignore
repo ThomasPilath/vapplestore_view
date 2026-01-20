@@ -20,6 +20,10 @@
 # production
 /build
 
+# devtools
+/.turbo
+docker-compose.dev.yml
+
 # misc
 .DS_Store
 *.pem
