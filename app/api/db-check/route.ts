@@ -4,13 +4,21 @@
  */
 
 import { verifyAndMigrateTables } from "@/lib/db-migrations";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
+import { authenticate, unauthorizedResponse } from "@/lib/auth-middleware";
+import logger from "@/lib/logger";
 
 let isChecking = false;
 let lastCheckTimestamp = 0;
 const CHECK_COOLDOWN = 60000; // 1 minute entre chaque vérification
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // Vérifier l'authentification
+  const user = authenticate(req);
+  if (!user) {
+    return unauthorizedResponse("Authentification requise");
+  }
+
   const now = Date.now();
   
   // Éviter les vérifications trop fréquentes
@@ -41,7 +49,7 @@ export async function GET() {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error("❌ Database check error:", error);
+    logger.error("Database check error", error);
     return NextResponse.json(
       {
         success: false,

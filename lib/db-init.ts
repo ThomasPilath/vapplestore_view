@@ -29,6 +29,7 @@ export async function initializeDatabase() {
         username VARCHAR(100) NOT NULL UNIQUE,
         password VARCHAR(255) NOT NULL,
         role VARCHAR(36) NOT NULL,
+        settings JSON DEFAULT NULL,
         createdAt DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         CONSTRAINT fk_users_role FOREIGN KEY (role) REFERENCES roles(id)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci

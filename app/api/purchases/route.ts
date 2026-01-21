@@ -4,6 +4,8 @@ import { query } from "@/lib/db";
 import { CreatePurchaseSchema } from "@/lib/validators";
 import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api-response";
 import { initializeDatabase } from "@/lib/db-init";
+import { authenticate, unauthorizedResponse } from "@/lib/auth-middleware";
+import logger from "@/lib/logger";
 
 function mapPurchaseRow(row: any) {
   return {
@@ -39,6 +41,12 @@ async function safeQuery(sql: string, params: any[] = []) {
  * Récupère tous les achats
  */
 export async function GET(req: NextRequest) {
+  // Vérifier l'authentification
+  const user = authenticate(req);
+  if (!user) {
+    return unauthorizedResponse("Authentification requise");
+  }
+
   try {
     // Optionnel: filtrer par mois
     const searchParams = req.nextUrl.searchParams;
@@ -56,7 +64,7 @@ export async function GET(req: NextRequest) {
     const mapped = Array.isArray(results) ? results.map(mapPurchaseRow) : [];
     return successResponse(mapped);
   } catch (error) {
-    console.error("❌ GET /api/purchases error:", error);
+    logger.error("GET /api/purchases error", error);
     return errorResponse("Failed to fetch purchases", 500);
   }
 }
@@ -66,6 +74,12 @@ export async function GET(req: NextRequest) {
  * Crée un nouvel achat
  */
 export async function POST(req: NextRequest) {
+  // Vérifier l'authentification
+  const user = authenticate(req);
+  if (!user) {
+    return unauthorizedResponse("Authentification requise");
+  }
+
   try {
     const body = await req.json();
 
@@ -122,11 +136,17 @@ export async function POST(req: NextRequest) {
  * Supprime tous les achats (ATTENTION: action destructrice)
  */
 export async function DELETE(req: NextRequest) {
+  // Vérifier l'authentification
+  const user = authenticate(req);
+  if (!user) {
+    return unauthorizedResponse("Authentification requise");
+  }
+
   try {
     await query("DELETE FROM purchases");
     return successResponse({ message: "All purchases deleted" });
   } catch (error) {
-    console.error("❌ DELETE /api/purchases error:", error);
+    logger.error("DELETE /api/purchases error", error);
     return errorResponse("Failed to delete purchases", 500);
   }
 }

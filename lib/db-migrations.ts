@@ -28,6 +28,7 @@ const EXPECTED_SCHEMAS = {
     { name: "username", type: "varchar(100)", nullable: false },
     { name: "password", type: "varchar(255)", nullable: false },
     { name: "role", type: "varchar(36)", nullable: false },
+    { name: "settings", type: "json", nullable: true },
     { name: "createdAt", type: "datetime", nullable: false, default: "CURRENT_TIMESTAMP" },
   ],
   revenues: [

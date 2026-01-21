@@ -3,21 +3,40 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import * as React from "react"
-import { Home, BarChart2, Settings, Menu, X } from "lucide-react"
+import { Home, BarChart2, Settings, Menu, X, LogOut, Users } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { ModeToggle } from "./mode-toggle"
 import { Button } from "@/components/ui/button"
+import { useAuthStore } from "@/hook/auth.store"
 
 export default function Sidemenu({ className }: { className?: string }) {
   const pathname = usePathname() || "/"
   const [isOpen, setIsOpen] = React.useState(false)
+  const { user, logout } = useAuthStore()
 
   const items = [
     { href: "/overview", label: "Suivi", icon: Home },
     { href: "/reports", label: "Rapports", icon: BarChart2 },
     { href: "/settings", label: "Paramètres", icon: Settings },
   ]
+
+  // Ajouter le lien admin seulement si l'utilisateur est admin (level 2)
+  const adminItems = (user?.roleLevel ?? 0) >= 2 
+    ? [{ href: "/admin/users", label: "Utilisateurs", icon: Users }]
+    : []
+
+  const allItems = [...items, ...adminItems]
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" })
+    } catch (error) {
+      // Ignorer les erreurs de logout API, on déconnecte quand même localement
+    } finally {
+      logout()
+    }
+  }
 
   return (
     <>
@@ -54,7 +73,7 @@ export default function Sidemenu({ className }: { className?: string }) {
         </div>
 
         <nav className="flex-1 px-2 py-4 space-y-1">
-          {items.map((item) => {
+          {allItems.map((item) => {
             const isActive = pathname === item.href
             const Icon = item.icon
             return (
@@ -76,7 +95,22 @@ export default function Sidemenu({ className }: { className?: string }) {
           })}
         </nav>
 
-        <div className="ml-auto px-4 py-4">
+        <div className="px-4 py-3 border-t">
+          {user && (
+            <div className="mb-3 px-3 py-2 text-sm">
+              <div className="font-medium text-foreground">{user.username}</div>
+              <div className="text-xs text-muted-foreground">{user.role}</div>
+            </div>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full mb-3"
+            onClick={handleLogout}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Déconnexion
+          </Button>
           <ModeToggle />
         </div>
       </aside>

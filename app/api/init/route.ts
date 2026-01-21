@@ -1,6 +1,15 @@
 import { initializeDatabase } from "@/lib/db-init";
+import { NextRequest } from "next/server";
+import { authenticate, unauthorizedResponse } from "@/lib/auth-middleware";
+import logger from "@/lib/logger";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  // Vérifier l'authentification
+  const user = authenticate(req);
+  if (!user) {
+    return unauthorizedResponse("Authentification requise");
+  }
+
   try {
     await initializeDatabase();
     return Response.json({
@@ -8,7 +17,7 @@ export async function GET() {
       message: "Database initialized successfully",
     });
   } catch (error) {
-    console.error("❌ Database initialization error:", error);
+    logger.error("Database initialization error", error);
     return Response.json(
       {
         success: false,

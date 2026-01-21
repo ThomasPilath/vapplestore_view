@@ -4,6 +4,8 @@ import { query } from "@/lib/db";
 import { CreateRevenueSchema } from "@/lib/validators";
 import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api-response";
 import { initializeDatabase } from "@/lib/db-init";
+import { authenticate, unauthorizedResponse } from "@/lib/auth-middleware";
+import logger from "@/lib/logger";
 
 function mapRevenueRow(row: any) {
   const base20 = Number(row.base20 ?? 0);
@@ -48,6 +50,12 @@ async function safeQuery(sql: string, params: any[] = []) {
  * Récupère toutes les entrées de revenu
  */
 export async function GET(req: NextRequest) {
+  // Vérifier l'authentification
+  const user = authenticate(req);
+  if (!user) {
+    return unauthorizedResponse("Authentification requise");
+  }
+
   try {
     // Optionnel: filtrer par mois
     const searchParams = req.nextUrl.searchParams;
@@ -65,7 +73,7 @@ export async function GET(req: NextRequest) {
     const mapped = Array.isArray(results) ? results.map(mapRevenueRow) : [];
     return successResponse(mapped);
   } catch (error) {
-    console.error("❌ GET /api/revenues error:", error);
+    logger.error("GET /api/revenues error", error);
     return errorResponse("Failed to fetch revenues", 500);
   }
 }
@@ -75,6 +83,12 @@ export async function GET(req: NextRequest) {
  * Crée une nouvelle entrée de revenu
  */
 export async function POST(req: NextRequest) {
+  // Vérifier l'authentification
+  const user = authenticate(req);
+  if (!user) {
+    return unauthorizedResponse("Authentification requise");
+  }
+
   try {
     const body = await req.json();
 
@@ -136,11 +150,17 @@ export async function POST(req: NextRequest) {
  * Supprime toutes les entrées de revenu (ATTENTION: action destructrice)
  */
 export async function DELETE(req: NextRequest) {
+  // Vérifier l'authentification
+  const user = authenticate(req);
+  if (!user) {
+    return unauthorizedResponse("Authentification requise");
+  }
+
   try {
     await query("DELETE FROM revenues");
     return successResponse({ message: "All revenues deleted" });
   } catch (error) {
-    console.error("❌ DELETE /api/revenues error:", error);
+    logger.error("DELETE /api/revenues error", error);
     return errorResponse("Failed to delete revenues", 500);
   }
 }

@@ -4,6 +4,7 @@ import React, { useMemo, useState, useEffect } from "react"
 import { storeRevenue } from "@/hook/revenue.store"
 import { storePurchase } from "@/hook/purchase.store"
 import { storeSettings } from "@/hook/settings.store"
+import { useAuthStore } from "@/hook/auth.store"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
@@ -28,22 +29,22 @@ export default function Overview() {
   const purchaseLoading = storePurchase((s) => s.loading)
   const purchases = storePurchase((s) => s.entries)
   const hideSundays = storeSettings((s) => s.hideSundays)
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated)
 
   const today = new Date()
   const currentMonth = today.toISOString().slice(0, 7) // YYYY-MM
   const [selectedMonth, setSelectedMonth] = useState(currentMonth)
-  const [hideSundaysInChart, setHideSundaysInChart] = useState(hideSundays)
+  // hideSundaysInChart est indépendant et contrôle uniquement l'axe XY
+  const [hideSundaysInChart, setHideSundaysInChart] = useState(false)
 
-  // Charger les données au démarrage
+  // Charger les données au démarrage et quand l'utilisateur se connecte
   useEffect(() => {
-    storeRevenue.getState().fetchEntries()
-    storePurchase.getState().fetchEntries()
-  }, [])
-
-  // Synchroniser l'état local avec le paramètre global
-  useEffect(() => {
-    setHideSundaysInChart(hideSundays)
-  }, [hideSundays])
+    if (isAuthenticated) {
+      console.log("🔄 Chargement des données (authentification détectée)");
+      storeRevenue.getState().fetchEntries()
+      storePurchase.getState().fetchEntries()
+    }
+  }, [isAuthenticated])
 
   // Calculer les données par mois
   const monthlyData = useMemo(() => {
@@ -170,7 +171,7 @@ export default function Overview() {
             <CardContent className="space-y-3 px-3 md:px-4 xl:px-5">
               <AppBarChart
                 data={
-                  hideSundays
+                  hideSundaysInChart
                     ? [
                         { name: "Ouvert", ouvert: dailyStats.openDays, fermé: 0 },
                         { name: "Fermé", ouvert: 0, fermé: dailyStats.closedDays },
@@ -180,7 +181,7 @@ export default function Overview() {
                         { name: "Fermé", ouvert: 0, fermé: dailyStats.closedDays, dimanche: dailyStats.sundayDays },
                       ]
                 }
-                hideSundays={hideSundays}
+                hideSundays={hideSundaysInChart}
               />
             </CardContent>
             {/* Légende personnalisée */}

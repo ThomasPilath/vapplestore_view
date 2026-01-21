@@ -4,142 +4,197 @@
 
 ## À propos
 
-**Vapplestore View** est un outil d'administration pensé pour le suivi et la gestion des boutiques de la franchise **Vapplestore**. Il fournit une interface claire pour consulter les rapports, gérer les inventaires en boutiques et suivre l'activité quotidienne.
+**Vapplestore View** est un outil d'administration pour le suivi et la gestion des boutiques de la franchise **Vapplestore**. Il fournit une interface claire pour consulter les rapports, gérer les inventaires et suivre l'activité quotidienne.
 
 ---
 
 ## Fonctionnalités principales ✅
 
-- Tableau de bord et pages de reporting pour visualiser l'activité
-- Gestion des paramètres et préférences des outils
-- Thème sombre/clair et bascule d'apparence
-- Composants UI réutilisables et état global léger
+- 🔐 **Authentification sécurisée** avec gestion des rôles
+- 📊 Tableau de bord et pages de reporting
+- 👥 **Page d'administration des utilisateurs** (admins)
+- ⚙️ Gestion des paramètres personnalisables
+- 🎨 Thème sombre/clair
+- 📱 Interface responsive
 
 ---
 
-## Technologies & outils 🔧
+## Technologies
 
-- **Next.js** (App Router) + **TypeScript**
-- **Tailwind CSS** pour le style
-- Composants inspirés de **shadcn/ui** (Radix + Tailwind)
-- **Zustand** pour la gestion d'état locale
-- **Lucide** pour les icônes
-- **next-themes** pour la gestion du thème
-- Outils de développement : **Bun** (install & dev), **ESLint**, **TypeScript**
+- **Next.js** 16.1.1 + **TypeScript**
+- **Tailwind CSS** + **shadcn/ui**
+- **MySQL/MariaDB**
+- **Docker** ready
 
 ---
 
-## Installation & démarrage 🛠️
+## 🚀 Démarrage rapide
 
-Prerequis : Bun (recommandé) ou Node (npm / pnpm / yarn)
+### Prérequis
 
-Avec Bun (recommandé) :
+- Bun ou Node.js
+- Base de données MySQL/MariaDB
+
+### Installation
 
 ```bash
+# Cloner et installer
+git clone <repo>
+cd vapplestore_view
 bun install
-bun dev
+
+# Configurer
+cp .env.example .env.local
+# Éditer .env.local avec vos valeurs
+
+# Initialiser la base de données
+bun run init-prod
+
+# Démarrer
+bun run dev
 ```
 
-Avec npm :
+L'application sera accessible à `http://localhost:3000`.
+
+### 🔑 Première connexion
+
+Connectez-vous avec les identifiants configurés dans `.env.local` (par défaut : admin / AdminPassword123).
+
+**⚠️ Changez immédiatement le mot de passe** depuis la page "Utilisateurs".
+
+---
+
+## 📦 Scripts disponibles
 
 ```bash
-npm install
-npm run dev
-```
-
-L'application sera accessible à l'adresse : `http://localhost:3000`.
-
-Pour construire et démarrer en production :
-
-```bash
-npm run build
-npm run start
-```
-
-Pour lancer le linter :
-
-```bash
-npm run lint
+bun run dev        # Développement
+bun run build      # Build production
+bun run start      # Démarrer en production
+bun run init-prod  # Initialiser DB + admin
 ```
 
 ---
 
-## Structure du projet 📁
+## 👥 Gestion des utilisateurs
 
-- `app/` : pages (App Router)
-- `components/` : composants réutilisables (UI, menu, etc.)
-- `ui/` : primitives UI (boutons, menus)
-- `hook/` : stores et hooks (z. ex. Zustand)
-- `lib/` : utilitaires
-- `public/` : actifs publics
+### Rôles
+- **vendeur** - Lecture seule
+- **gestionnaire** - Lecture + écriture
+- **admin** - Tous les droits + gestion utilisateurs
+
+### Créer des utilisateurs
+
+Via l'interface web (recommandé) :
+1. Se connecter en tant qu'admin
+2. Menu → "Utilisateurs"
+3. "Nouvel utilisateur"
+
+Ou via CLI :
+```bash
+bun run create-user <username> <password> <role>
+```
 
 ---
 
-## Contribution & contact ✉️
+## 🐳 Docker
 
-Projet créé par **PILATH**. Toute contribution est la bienvenue : ouvrez une issue ou une pull request.
-
-
-Bonne exploration — si vous avez besoin d'aide contactez moi. 💡
-
----
-
-## Docker & stack MariaDB 🐳
-
-### Configuration initiale (obligatoire)
-
-1. **Créer le fichier `.env`** depuis le template :
-   ```bash
-   cp .env.example .env
-   ```
-
-2. **Renseigner les secrets** dans `.env` :
-   - `DOCKERHUB_USERNAME` : ton identifiant Docker Hub
-   - `DATABASE_NAME` : nom de la base de données
-   - `DATABASE_USER` : nom d'utilisateur pour l'app
-   - `DATABASE_PASSWORD` : mot de passe de l'app (à choisir)
-   - `MARIADB_ROOT_PASSWORD` : mot de passe root MariaDB (à choisir)
-
-⚠️ **Sécurité** : Le fichier `.env` est ignoré par git. Ne jamais commiter de secrets !
-
-### Construire et lancer en local
+### Développement local
 
 ```bash
-# Build l'image locale
+# Avec MariaDB
+docker compose -f docker-compose.dev.yml up -d
+```
+
+### Production
+
+```bash
+# Build
 docker compose build
 
-# Démarre l'app + MariaDB (ports 3000 et 3306 exposés)
-docker compose up
-
-# Ou en mode détaché
+# Démarrer
 docker compose up -d
 ```
 
-La stack complète démarre avec :
-- **App Next.js** : `http://localhost:3000`
-- **MariaDB 11** : `localhost:3306` (accessible avec les credentials du `.env`)
-- **Volume persistant** : `mariadb_data` pour conserver les données DB
+---
 
-### Publication automatique sur Docker Hub (CI/CD GitHub Actions)
+## 🔒 Sécurité
 
-Le workflow `.github/workflows/docker-publish.yml` build et publie automatiquement l'image sur Docker Hub.
+### Configuration minimale
 
-**Configuration des secrets GitHub** (une seule fois) :
+Avant le déploiement en production :
 
-1. Va dans **Settings** → **Secrets and variables** → **Actions**
-2. Ajoute :
-   - `DOCKERHUB_USERNAME` : ton nom d'utilisateur Docker Hub
-   - `DOCKERHUB_TOKEN` : un [access token Docker Hub](https://hub.docker.com/settings/security) avec droits de push
+1. **Générer des secrets JWT forts** :
+   ```bash
+   openssl rand -base64 64
+   ```
 
-**Déclenchement du workflow** :
-- ✅ Automatique sur `push` vers `main`
-- ✅ Sur les tags `v*` (releases)
-- ✅ Manuellement via **Actions** → **Run workflow** (sur n'importe quelle branche)
+2. **Configurer dans .env.local** :
+   ```env
+   JWT_ACCESS_SECRET=<votre_secret_généré>
+   JWT_REFRESH_SECRET=<votre_secret_généré>
+   ADMIN_PASSWORD=<mot_de_passe_fort>
+   ```
 
-**Tags d'images générés** :
-- `pilath/vapplestore-view:latest` (branche main uniquement)
-- `pilath/vapplestore-view:main` (nom de branche)
-- `pilath/vapplestore-view:sha-abc1234` (hash de commit)
-- `pilath/vapplestore-view:v1.0.0` (si tag git)
+3. **Utiliser HTTPS** en production
+
+4. **Limiter l'accès à la DB** (firewall)
+
+5. **Configurer des sauvegardes automatiques**
+
+---
+
+## 📁 Structure du projet
+
+```
+vapplestore_view/
+├── app/           # Pages Next.js
+│   ├── api/      # API Routes
+│   └── ...       # Pages de l'application
+├── components/    # Composants React
+├── lib/          # Utilitaires
+├── scripts/      # Scripts CLI
+└── types/        # Types TypeScript
+```
+
+---
+
+## 🐛 Dépannage
+
+### Base de données non initialisée
+```bash
+bun run init-prod
+```
+
+### Erreur de connexion DB
+Vérifiez les variables dans `.env.local` :
+```bash
+bun run test-db
+```
+
+### Reset mot de passe admin
+```bash
+# Se connecter à MySQL
+docker compose exec mariadb mariadb -u root -p vapplestore
+
+# Supprimer et recréer
+DELETE FROM users WHERE username = 'admin';
+exit
+
+bun run init-prod
+```
+
+---
+
+## 🤝 Contribution
+
+Projet créé par **PILATH**. 
+
+Pour toute question, ouvrez une issue.
+
+---
+
+## 📝 Licence
+
+Tous droits réservés © 2026
 
 **Suivi** : Consulte l'onglet **Actions** sur GitHub pour voir les logs de build en temps réel.

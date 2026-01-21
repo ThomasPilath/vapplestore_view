@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/components/auth-provider";
 import Sidemenu from "@/components/side-menu";
 import { DatabaseChecker } from "@/components/database-checker";
 
@@ -23,13 +24,15 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <DatabaseChecker />
-          <div className="flex min-h-screen">
-            <Sidemenu />
-            <main className="flex-1 md:ml-64 overflow-auto bg-background">
-              {children}
-            </main>
-          </div>
+          <AuthProvider>
+            <DatabaseChecker />
+            <div className="flex min-h-screen">
+              <Sidemenu />
+              <main className="flex-1 md:ml-64 overflow-auto bg-background">
+                {children}
+              </main>
+            </div>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
