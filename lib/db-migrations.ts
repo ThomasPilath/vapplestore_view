@@ -14,6 +14,13 @@ interface ColumnInfo {
   Extra: string;
 }
 
+interface IndexInfo {
+  Table: string;
+  Non_unique: number;
+  Key_name: string;
+  Column_name: string;
+}
+
 /**
  * Schémas attendus pour chaque table
  */
@@ -62,7 +69,7 @@ async function tableExists(tableName: string): Promise<boolean> {
       `SELECT COUNT(*) as count FROM information_schema.tables 
        WHERE table_schema = DATABASE() AND table_name = ?`,
       [tableName]
-    ) as any[];
+    ) as Array<{count: number}>;
     return result[0]?.count > 0;
   } catch (error) {
     console.error(`❌ Error checking table ${tableName}:`, error);
@@ -75,11 +82,45 @@ async function tableExists(tableName: string): Promise<boolean> {
  */
 async function getTableColumns(tableName: string): Promise<ColumnInfo[]> {
   try {
-    const columns = await query(`SHOW COLUMNS FROM ${tableName}`) as ColumnInfo[];
+    const columns = await query(`SHOW COLUMNS FROM ${tableName}`) as unknown as ColumnInfo[];
     return columns;
   } catch (error) {
     console.error(`❌ Error getting columns for ${tableName}:`, error);
     return [];
+  }
+}
+
+/**
+ * Vérifie si un index existe déjà
+ */
+async function indexExists(tableName: string, indexName: string): Promise<boolean> {
+  try {
+    const indexes = await query(
+      `SELECT TABLE_NAME, NON_UNIQUE, INDEX_NAME, COLUMN_NAME
+       FROM information_schema.statistics
+       WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?`,
+      [tableName, indexName]
+    ) as unknown as IndexInfo[];
+    return indexes.length > 0;
+  } catch (error) {
+    console.error(`❌ Error checking index ${indexName} on ${tableName}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Ajoute un index unique s'il est manquant
+ */
+async function ensureUniqueIndex(tableName: string, indexName: string, column: string) {
+  const exists = await indexExists(tableName, indexName);
+  if (exists) return;
+
+  console.log(`➕ Ajout de l'index unique ${indexName} sur ${tableName}(${column})...`);
+  try {
+    await query(`ALTER TABLE ${tableName} ADD UNIQUE INDEX ${indexName} (${column})`);
+    console.log(`✅ Index ${indexName} créé sur ${tableName}`);
+  } catch (error) {
+    console.error(`❌ Erreur lors de la création de l'index ${indexName} sur ${tableName}:`, error);
   }
 }
 
@@ -104,7 +145,7 @@ async function migrateOldRevenuesData(): Promise<void> {
     console.log("📦 Migration des données revenues_OLD → revenues...");
 
     // Vérifier si revenues_OLD a des données
-    const oldData = await query(`SELECT * FROM revenues_OLD`) as any[];
+    const oldData = await query(`SELECT * FROM revenues_OLD`) as Record<string, unknown>[];
     if (!oldData || oldData.length === 0) {
       console.log("ℹ️  Aucune donnée à migrer depuis revenues_OLD");
       return;
@@ -126,14 +167,14 @@ async function migrateOldRevenuesData(): Promise<void> {
          base5_5 = VALUES(base5_5),
          tva5_5 = VALUES(tva5_5)`,
         [
-          row.id,
-          row.date,
+          row.id as string,
+          row.date as string,
           base20,
           tva20,
           base5_5,
           tva5_5,
-          row.createdAt,
-          row.updatedAt ?? row.createdAt,
+          row.createdAt as string,
+          (row.updatedAt as string | null | undefined) ?? (row.createdAt as string),
         ]
       );
     }
@@ -290,6 +331,11 @@ export async function verifyAndMigrateTables(): Promise<void> {
     const { initializeDatabase } = await import("@/lib/db-init");
     await initializeDatabase();
 
+    // Appliquer les migrations versionnées
+    const { runMigrations } = await import("@/lib/migrations");
+    const { migrations } = await import("@/lib/migration-definitions");
+    await runMigrations(migrations);
+
     // Ensuite, migrer les schémas
     await migrateRevenuesSchema();
     await migratePurchasesSchema();
@@ -301,6 +347,9 @@ export async function verifyAndMigrateTables(): Promise<void> {
     for (const tableName of Object.keys(EXPECTED_SCHEMAS)) {
       await verifyAndUpdateTable(tableName);
     }
+
+    // Index critiques
+    await ensureUniqueIndex("users", "idx_username", "username");
 
     console.log("✅ Vérification et migration de la base de données terminées");
   } catch (error) {

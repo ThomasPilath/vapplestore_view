@@ -4,16 +4,16 @@ import { purchaseAPI } from "@/lib/api-client";
 
 export type { PurchaseEntry };
 
-const normalizePurchase = (entry: any): PurchaseEntry => {
+const normalizePurchase = (entry: Record<string, unknown>): PurchaseEntry => {
   return {
-    id: entry.id,
-    date: entry.date,
+    id: entry.id as string,
+    date: entry.date as string,
     totalHT: Number(entry.totalHT ?? 0),
     tva: Number(entry.tva ?? 0),
     shippingFee: Number(entry.shippingFee ?? 0),
     totalTTC: Number(entry.totalTTC ?? 0),
-    createdAt: entry.createdAt,
-    updatedAt: entry.updatedAt ?? entry.createdAt,
+    createdAt: entry.createdAt as string,
+    updatedAt: (entry.updatedAt as string) ?? (entry.createdAt as string),
   };
 };
 

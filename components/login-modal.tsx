@@ -37,6 +37,7 @@ export function LoginModal({ open }: LoginModalProps) {
         headers: {
           "Content-Type": "application/json",
         },
+        credentials: "include",
         body: JSON.stringify({ username, password }),
       });
 
@@ -48,12 +49,13 @@ export function LoginModal({ open }: LoginModalProps) {
         return;
       }
 
-      // Stocker les informations d'authentification
-      setAuth(data.user, data.tokens.accessToken, data.tokens.refreshToken);
+      // Stocker l'utilisateur en mémoire (les tokens sont dans les cookies HttpOnly)
+      setAuth(data.user);
       
       // Rediriger vers la page overview
       router.push("/overview");
-    } catch (err) {
+      setIsLoading(false);
+    } catch {
       setError("Erreur de connexion au serveur");
       setIsLoading(false);
     }

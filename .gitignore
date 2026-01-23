@@ -2,6 +2,7 @@
 
 # Documentation interne
 /docs
+AUDIT.md
 
 # dependencies
 /node_modules

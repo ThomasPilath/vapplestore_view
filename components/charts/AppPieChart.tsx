@@ -6,7 +6,7 @@ import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts"
 interface PieChartData {
   name: string
   value: number
-  [key: string]: any
+  [key: string]: string | number
 }
 
 interface AppPieChartProps {
@@ -19,10 +19,10 @@ interface AppPieChartProps {
  * Composant graphique en camembert (donut)
  * Affiche la distribution des données avec légende centrée
  */
-export default function AppPieChart({ data, colors, hideSundays }: AppPieChartProps) {
+export default function AppPieChart({ data, colors }: AppPieChartProps) {
   const total = useMemo(() => data.reduce((sum, item) => sum + item.value, 0), [data])
 
-  const legendData = useMemo(
+  const _legendData = useMemo(
     () =>
       data.map((item) => ({
         ...item,

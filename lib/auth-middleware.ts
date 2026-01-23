@@ -15,7 +15,9 @@ export interface AuthenticatedRequest extends NextRequest {
  */
 export function authenticate(request: NextRequest): TokenPayload | null {
   const authHeader = request.headers.get("Authorization");
-  const token = extractTokenFromHeader(authHeader);
+  const cookieToken = request.cookies.get("accessToken")?.value;
+  const headerToken = extractTokenFromHeader(authHeader);
+  const token = cookieToken || headerToken;
   
   if (!token) {
     return null;

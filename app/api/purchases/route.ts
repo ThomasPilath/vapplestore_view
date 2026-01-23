@@ -5,9 +5,12 @@ import { CreatePurchaseSchema } from "@/lib/validators";
 import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api-response";
 import { initializeDatabase } from "@/lib/db-init";
 import { authenticate, unauthorizedResponse } from "@/lib/auth-middleware";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 import logger from "@/lib/logger";
+import type { PurchaseRow, PurchaseEntry, ZodErrorField } from "@/types";
 
-function mapPurchaseRow(row: any) {
+function mapPurchaseRow(row: PurchaseRow): PurchaseEntry {
   return {
     id: row.id,
     date: row.date instanceof Date ? row.date.toISOString().slice(0, 10) : row.date,
@@ -24,13 +27,16 @@ function mapPurchaseRow(row: any) {
   };
 }
 
-async function safeQuery(sql: string, params: any[] = []) {
+async function safeQuery(sql: string, params: (string | number)[] = []): Promise<PurchaseRow[] | null> {
   try {
-    return await query(sql, params);
-  } catch (error: any) {
-    if (error?.code === "ER_NO_SUCH_TABLE") {
+    const result = await query(sql, params);
+    return Array.isArray(result) && result.length > 0 && 'id' in result[0] ? (result as unknown as PurchaseRow[]) : Array.isArray(result) ? [] : null;
+  } catch (error: unknown) {
+    const dbError = error as { code?: string; message?: string };
+    if (dbError?.code === "ER_NO_SUCH_TABLE") {
       await initializeDatabase();
-      return await query(sql, params);
+      const result = await query(sql, params);
+      return Array.isArray(result) && result.length > 0 && 'id' in result[0] ? (result as unknown as PurchaseRow[]) : Array.isArray(result) ? [] : null;
     }
     throw error;
   }
@@ -52,8 +58,9 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const month = searchParams.get("month");
 
+    // Récupérer les achats
     let sql = "SELECT * FROM purchases ORDER BY date DESC";
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (month) {
       sql = "SELECT * FROM purchases WHERE DATE_FORMAT(date, '%Y-%m') = ? ORDER BY date DESC";
@@ -90,8 +97,8 @@ export async function POST(req: NextRequest) {
     const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     const sql = `
-      INSERT INTO purchases (id, date, totalHT, tva, shippingFee, totalTTC, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO purchases (id, date, totalHT, tva, shippingFee, totalTTC, createdAt, createdBy, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await safeQuery(sql, [
@@ -102,8 +109,20 @@ export async function POST(req: NextRequest) {
       validatedData.shippingFee,
       validatedData.totalTTC,
       timestamp,
+      user.userId,
       timestamp,
     ]);
+
+    // Audit trail
+    await logAudit({
+      userId: user.userId,
+      action: "CREATE",
+      tableName: "purchases",
+      recordId: id,
+      changes: validatedData,
+      ip: getClientIp(req),
+      userAgent: req.headers.get("user-agent") || undefined,
+    });
 
     return successResponse(
       {
@@ -114,19 +133,22 @@ export async function POST(req: NextRequest) {
       },
       201
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const zodError = error as { name?: string; errors?: ZodErrorField[] };
     console.error("❌ POST /api/purchases error:", error);
 
     // Gestion des erreurs Zod
-    if (error.name === "ZodError") {
+    if (zodError?.name === "ZodError") {
       const fieldErrors: Record<string, string[]> = {};
-      error.errors.forEach((err: any) => {
-        const field = err.path.join(".");
-        fieldErrors[field] = [err.message];
+      zodError.errors?.forEach((err) => {
+        const path = err.path.join(".");
+        if (!fieldErrors[path]) fieldErrors[path] = [];
+        fieldErrors[path].push(err.message);
       });
       return validationErrorResponse(fieldErrors);
     }
 
+    logger.error("POST /api/purchases error", error);
     return errorResponse("Failed to create purchase", 500);
   }
 }
@@ -143,8 +165,19 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    await query("DELETE FROM purchases");
-    return successResponse({ message: "All purchases deleted" });
+    // Soft delete au lieu de DELETE physique
+    await query("UPDATE purchases SET deletedAt = NOW(), updatedBy = ? WHERE deletedAt IS NULL", [user.userId]);
+    
+    // Audit trail
+    await logAudit({
+      userId: user.userId,
+      action: "DELETE",
+      tableName: "purchases",
+      ip: getClientIp(req),
+      userAgent: req.headers.get("user-agent") || undefined,
+    });
+    
+    return successResponse({ message: "All purchases soft deleted" });
   } catch (error) {
     logger.error("DELETE /api/purchases error", error);
     return errorResponse("Failed to delete purchases", 500);

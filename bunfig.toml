@@ -1,0 +1,8 @@
+[test]
+# Configuration Bun Test
+
+[test.env]
+# Variables d'environnement pour les tests
+NODE_ENV = "test"
+JWT_ACCESS_SECRET = "test-access-secret-for-unit-tests-only-do-not-use-in-production"
+JWT_REFRESH_SECRET = "test-refresh-secret-for-unit-tests-only-do-not-use-in-production"

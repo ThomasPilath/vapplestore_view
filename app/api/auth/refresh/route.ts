@@ -4,35 +4,33 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { verifyRefreshToken, generateAccessToken } from "@/lib/auth";
-import { z } from "zod";
+import { verifyRefreshToken, generateAccessToken, generateRefreshToken } from "@/lib/auth";
 
-const refreshSchema = z.object({
-  refreshToken: z.string().min(1, "Le refresh token est requis"),
-});
+const ACCESS_TOKEN_MAX_AGE = 15 * 60; // 15 minutes
+const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60; // 7 jours
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    
-    // Validation
-    const validation = refreshSchema.safeParse(body);
-    if (!validation.success) {
+    const refreshToken = request.cookies.get("refreshToken")?.value;
+    if (!refreshToken) {
       return NextResponse.json(
-        { error: "Données invalides", details: validation.error.errors },
-        { status: 400 }
+        { error: "Refresh token manquant" },
+        { status: 401 }
       );
     }
-
-    const { refreshToken } = validation.data;
 
     // Vérifier le refresh token
     const payload = verifyRefreshToken(refreshToken);
     if (!payload) {
-      return NextResponse.json(
+      const response = NextResponse.json(
         { error: "Refresh token invalide ou expiré" },
         { status: 401 }
       );
+      
+      // Nettoyer les cookies expirés/invalides
+      response.cookies.set({ name: "accessToken", value: "", path: "/", maxAge: 0 });
+      response.cookies.set({ name: "refreshToken", value: "", path: "/", maxAge: 0 });
+      return response;
     }
 
     // Générer un nouveau access token
@@ -43,10 +41,39 @@ export async function POST(request: NextRequest) {
       roleLevel: payload.roleLevel,
     });
 
-    return NextResponse.json({
-      success: true,
-      accessToken: newAccessToken,
+    // Rotation du refresh token pour prolonger la session
+    const newRefreshToken = generateRefreshToken({
+      userId: payload.userId,
+      username: payload.username,
+      role: payload.role,
+      roleLevel: payload.roleLevel,
     });
+
+    const response = NextResponse.json({
+      success: true,
+    });
+
+    response.cookies.set({
+      name: "accessToken",
+      value: newAccessToken,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: ACCESS_TOKEN_MAX_AGE,
+    });
+
+    response.cookies.set({
+      name: "refreshToken",
+      value: newRefreshToken,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+    });
+
+    return response;
   } catch (error) {
     console.error("❌ Refresh token error:", error);
     return NextResponse.json(

@@ -4,7 +4,7 @@ import { revenueAPI } from "@/lib/api-client";
 
 export type { RevenueEntry };
 
-const computeRevenue = (entry: any): RevenueEntry => {
+const computeRevenue = (entry: Record<string, unknown>): RevenueEntry => {
   const base20 = Number(entry.base20 ?? 0);
   const tva20 = Number(entry.tva20 ?? 0);
   const base5_5 = Number(entry.base5_5 ?? 0);
@@ -13,14 +13,14 @@ const computeRevenue = (entry: any): RevenueEntry => {
   const totalTTC = totalHT + tva20 + tva5_5;
 
   return {
-    id: entry.id,
-    date: entry.date,
+    id: entry.id as string,
+    date: entry.date as string,
     base20,
     tva20,
     base5_5,
     tva5_5,
-    createdAt: entry.createdAt,
-    updatedAt: entry.updatedAt ?? entry.createdAt,
+    createdAt: entry.createdAt as string,
+    updatedAt: (entry.updatedAt as string) ?? (entry.createdAt as string),
     totalHT,
     totalTTC,
   };

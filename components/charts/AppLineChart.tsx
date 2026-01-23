@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from "react"
+import React, { useLayoutEffect, useMemo, useState } from "react"
 import {
   LineChart,
   Line,
@@ -28,13 +28,16 @@ interface AppLineChartProps {
 
 // Media query hook using modern listeners only (no deprecated addListener/removeListener)
 const useMediaQuery = (query: string) => {
-  const [matches, setMatches] = useState(false)
+  // Initialize with the actual media query value synchronously
+  const [matches, setMatches] = useState(() => {
+    if (typeof window === "undefined") return false
+    return window.matchMedia(query).matches
+  })
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const mq = window.matchMedia(query)
     const handleChange = (event: MediaQueryListEvent) => setMatches(event.matches)
 
-    setMatches(mq.matches)
     mq.addEventListener("change", handleChange)
 
     return () => mq.removeEventListener("change", handleChange)
@@ -51,33 +54,26 @@ export default function AppLineChart({
   const [weekIndex, setWeekIndex] = useState(0)
   const isMobile = useMediaQuery("(max-width: 768px)")
 
-  useEffect(() => {
-    if (!isMobile) {
-      setWeekIndex(0)
-      return
-    }
-
-    const weeks = Math.max(1, Math.ceil(data.length / 7))
-    setWeekIndex((prev) => Math.min(prev, weeks - 1))
-  }, [data.length, isMobile])
+  // Réinitialiser weekIndex quand on passe du mobile au desktop
+  const displayWeekIndex = isMobile ? weekIndex : 0
 
   const weeks = useMemo(() => Math.max(1, Math.ceil(data.length / 7)), [data.length])
 
   const displayData = useMemo(() => {
     if (!isMobile) return data
-    const start = weekIndex * 7
+    const start = displayWeekIndex * 7
     return data.slice(start, start + 7)
-  }, [data, isMobile, weekIndex])
+  }, [data, isMobile, displayWeekIndex])
 
-  const canPrev = weekIndex > 0
-  const canNext = weekIndex < weeks - 1
+  const canPrev = displayWeekIndex > 0
+  const canNext = displayWeekIndex < weeks - 1
 
   const rangeLabel = useMemo(() => {
     if (!isMobile || displayData.length === 0) return ""
     const startDay = displayData[0].day
     const endDay = displayData[displayData.length - 1].day
     return `Semaine du ${startDay} au ${endDay}`
-  }, [displayData, isMobile, weekIndex])
+  }, [displayData, isMobile])
 
   return (
     <div className="w-full">

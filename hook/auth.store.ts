@@ -1,6 +1,6 @@
 /**
  * Store Zustand pour l'authentification
- * Gère l'état de connexion, les tokens et l'utilisateur connecté
+ * Gère l'état de connexion et l'utilisateur (tokens stockés en cookies HttpOnly)
  */
 
 import { create } from "zustand";
@@ -15,14 +15,11 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  accessToken: string | null;
-  refreshToken: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   
   // Actions
-  setAuth: (user: User, accessToken: string, refreshToken: string) => void;
-  setAccessToken: (accessToken: string) => void;
+  setAuth: (user: User) => void;
   logout: () => void;
   setLoading: (isLoading: boolean) => void;
 }
@@ -31,30 +28,20 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      accessToken: null,
-      refreshToken: null,
       isAuthenticated: false,
       isLoading: true,
       
-      setAuth: (user, accessToken, refreshToken) => {
+      setAuth: (user) => {
         set({
           user,
-          accessToken,
-          refreshToken,
           isAuthenticated: true,
           isLoading: false,
         });
       },
       
-      setAccessToken: (accessToken) => {
-        set({ accessToken });
-      },
-      
       logout: () => {
         set({
           user: null,
-          accessToken: null,
-          refreshToken: null,
           isAuthenticated: false,
           isLoading: false,
         });
@@ -66,11 +53,9 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "auth-storage",
-      // Ne persister que les tokens et l'utilisateur
+      // Ne persister que les informations non sensibles
       partialize: (state) => ({
         user: state.user,
-        accessToken: state.accessToken,
-        refreshToken: state.refreshToken,
         isAuthenticated: state.isAuthenticated,
       }),
     }

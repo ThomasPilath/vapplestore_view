@@ -25,7 +25,7 @@ async function initRoles() {
       const existing = await query(
         "SELECT id FROM roles WHERE id = ?",
         [role.id]
-      ) as any[];
+      ) as Array<{id: string}>;
 
       if (existing.length === 0) {
         await query(
@@ -50,7 +50,7 @@ async function createAdminUser(username: string, password: string) {
     const existingUsers = await query(
       "SELECT id, username FROM users WHERE username = ?",
       [username]
-    ) as any[];
+    ) as Array<{id: string; username: string}>;
 
     if (existingUsers.length > 0) {
       console.log(`  ⚠️  L'utilisateur "${username}" existe déjà (ID: ${existingUsers[0].id})`);

@@ -7,8 +7,11 @@ import { randomUUID } from "crypto";
 import { query } from "@/lib/db";
 import { authenticate, unauthorizedResponse, forbiddenResponse } from "@/lib/auth-middleware";
 import { hashPassword } from "@/lib/auth";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 import { z } from "zod";
 import logger from "@/lib/logger";
+import type { UserRow } from "@/types";
 
 const createUserSchema = z.object({
   username: z.string().min(3, "Le nom d'utilisateur doit contenir au moins 3 caractères"),
@@ -22,11 +25,7 @@ const updateUserSchema = z.object({
   roleId: z.string().min(1).optional(),
 });
 
-interface User {
-  id: string;
-  username: string;
-  role: string;
-  createdAt: Date;
+interface AdminUser extends UserRow {
   roleName: string;
   roleLevel: number;
 }
@@ -52,11 +51,11 @@ export async function GET(request: NextRequest) {
        FROM users u
        JOIN roles r ON u.role = r.id
        ORDER BY u.createdAt DESC`
-    ) as User[];
+    ) as unknown as AdminUser[];
 
     return NextResponse.json({
       success: true,
-      data: users.map(u => ({
+      data: users.map((u) => ({
         id: u.id,
         username: u.username,
         roleId: u.role,
@@ -105,7 +104,7 @@ export async function POST(request: NextRequest) {
     const existing = await query(
       "SELECT id FROM users WHERE username = ?",
       [username]
-    ) as any[];
+    ) as UserRow[];
 
     if (existing.length > 0) {
       return NextResponse.json(
@@ -118,7 +117,7 @@ export async function POST(request: NextRequest) {
     const roles = await query(
       "SELECT id FROM roles WHERE id = ?",
       [roleId]
-    ) as any[];
+    ) as UserRow[];
 
     if (roles.length === 0) {
       return NextResponse.json(
@@ -133,10 +132,21 @@ export async function POST(request: NextRequest) {
     // Créer l'utilisateur
     const userId = randomUUID();
     await query(
-      `INSERT INTO users (id, username, password, role, createdAt)
-       VALUES (?, ?, ?, ?, NOW())`,
-      [userId, username, hashedPassword, roleId]
+      `INSERT INTO users (id, username, password, role, createdAt, createdBy)
+       VALUES (?, ?, ?, ?, NOW(), ?)`,
+      [userId, username, hashedPassword, roleId, user.userId]
     );
+
+    // Audit trail
+    await logAudit({
+      userId: user.userId,
+      action: "CREATE",
+      tableName: "users",
+      recordId: userId,
+      changes: { username, roleId },
+      ip: getClientIp(request),
+      userAgent: request.headers.get("user-agent") || undefined,
+    });
 
     return NextResponse.json({
       success: true,
@@ -192,7 +202,7 @@ export async function PUT(request: NextRequest) {
     const existing = await query(
       "SELECT id FROM users WHERE id = ?",
       [userId]
-    ) as any[];
+    ) as Array<{id: string}>;
 
     if (existing.length === 0) {
       return NextResponse.json(
@@ -203,14 +213,14 @@ export async function PUT(request: NextRequest) {
 
     // Construire la requête de mise à jour
     const updates: string[] = [];
-    const values: any[] = [];
+    const values: (string | number)[] = [];
 
     if (username) {
       // Vérifier que le username n'est pas déjà pris
       const duplicate = await query(
         "SELECT id FROM users WHERE username = ? AND id != ?",
         [username, userId]
-      ) as any[];
+      ) as Array<{id: string}>;
 
       if (duplicate.length > 0) {
         return NextResponse.json(
@@ -234,7 +244,7 @@ export async function PUT(request: NextRequest) {
       const roles = await query(
         "SELECT id FROM roles WHERE id = ?",
         [roleId]
-      ) as any[];
+      ) as Array<{id: string}>;
 
       if (roles.length === 0) {
         return NextResponse.json(
@@ -254,11 +264,32 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Ajouter updatedBy
+    updates.push("updatedBy = ?");
+    updates.push("updatedAt = NOW()");
+    values.push(user.userId);
     values.push(userId);
+    
     await query(
       `UPDATE users SET ${updates.join(", ")} WHERE id = ?`,
       values
     );
+
+    // Audit trail
+    const changes: Record<string, string | number | undefined> = {};
+    if (username) changes.username = username;
+    if (password) changes.password = "[REDACTED]";
+    if (roleId) changes.roleId = roleId;
+    
+    await logAudit({
+      userId: user.userId,
+      action: "UPDATE",
+      tableName: "users",
+      recordId: userId,
+      changes,
+      ip: getClientIp(request),
+      userAgent: request.headers.get("user-agent") || undefined,
+    });
 
     return NextResponse.json({
       success: true,
@@ -308,9 +339,9 @@ export async function DELETE(request: NextRequest) {
 
     // Vérifier que l'utilisateur existe
     const existing = await query(
-      "SELECT id FROM users WHERE id = ?",
+      "SELECT id FROM users WHERE id = ? AND deletedAt IS NULL",
       [userId]
-    ) as any[];
+    ) as Array<{id: string}>;
 
     if (existing.length === 0) {
       return NextResponse.json(
@@ -319,7 +350,21 @@ export async function DELETE(request: NextRequest) {
       );
     }
 
-    await query("DELETE FROM users WHERE id = ?", [userId]);
+    // Soft delete au lieu de DELETE physique
+    await query(
+      "UPDATE users SET deletedAt = NOW(), updatedBy = ? WHERE id = ?",
+      [user.userId, userId]
+    );
+
+    // Audit trail
+    await logAudit({
+      userId: user.userId,
+      action: "DELETE",
+      tableName: "users",
+      recordId: userId,
+      ip: getClientIp(request),
+      userAgent: request.headers.get("user-agent") || undefined,
+    });
 
     return NextResponse.json({
       success: true,

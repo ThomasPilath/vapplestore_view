@@ -1,12 +1,16 @@
 /**
  * API Route: POST /api/auth/login
- * Authentifie un utilisateur et retourne les tokens JWT
+ * Authentifie un utilisateur et dépose les tokens JWT en cookies HttpOnly
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { verifyPassword, generateTokenPair } from "@/lib/auth";
+import { getClientIp, rateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { z } from "zod";
+
+const ACCESS_TOKEN_MAX_AGE = 15 * 60; // 15 minutes
+const REFRESH_TOKEN_MAX_AGE = 7 * 24 * 60 * 60; // 7 jours
 
 const loginSchema = z.object({
   username: z.string().min(1, "Le nom d'utilisateur est requis"),
@@ -21,7 +25,7 @@ interface User {
   createdAt: Date;
 }
 
-interface Role {
+interface _Role {
   id: string;
   roleName: string;
   level: number;
@@ -29,6 +33,12 @@ interface Role {
 
 export async function POST(request: NextRequest) {
   try {
+    const ip = getClientIp(request);
+    const { allowed, retryAfterSeconds } = rateLimit(request, `login:${ip}`, 5, 15 * 60 * 1000);
+    if (!allowed) {
+      return rateLimitResponse(retryAfterSeconds);
+    }
+
     const body = await request.json();
     
     // Validation
@@ -50,7 +60,7 @@ export async function POST(request: NextRequest) {
        JOIN roles r ON u.role = r.id
        WHERE u.username = ?`,
       [username]
-    ) as Array<User & { roleName: string; roleLevel: number }>;
+    ) as unknown as Array<User & { roleName: string; roleLevel: number }>;
 
     if (users.length === 0) {
       return NextResponse.json(
@@ -78,7 +88,7 @@ export async function POST(request: NextRequest) {
       roleLevel: user.roleLevel,
     });
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       user: {
         id: user.id,
@@ -86,8 +96,29 @@ export async function POST(request: NextRequest) {
         role: user.roleName,
         roleLevel: user.roleLevel,
       },
-      tokens,
     });
+
+    response.cookies.set({
+      name: "accessToken",
+      value: tokens.accessToken,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: ACCESS_TOKEN_MAX_AGE,
+    });
+
+    response.cookies.set({
+      name: "refreshToken",
+      value: tokens.refreshToken,
+      httpOnly: true,
+      sameSite: "lax",
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+      maxAge: REFRESH_TOKEN_MAX_AGE,
+    });
+
+    return response;
   } catch (error) {
     console.error("❌ Login error:", error);
     return NextResponse.json(

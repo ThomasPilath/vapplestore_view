@@ -5,9 +5,16 @@
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
-// Secrets JWT - À configurer dans .env en production
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET || "your-access-secret-change-in-production";
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || "your-refresh-secret-change-in-production";
+// Secrets JWT - doivent être définis dans l'environnement (aucun fallback pour éviter les secrets faibles)
+const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+
+if (!JWT_ACCESS_SECRET || !JWT_REFRESH_SECRET) {
+  throw new Error("JWT_ACCESS_SECRET et JWT_REFRESH_SECRET doivent être définis dans l'environnement");
+}
+
+const JWT_ACCESS_SECRET_SAFE = JWT_ACCESS_SECRET as string;
+const JWT_REFRESH_SECRET_SAFE = JWT_REFRESH_SECRET as string;
 
 // Durées de validité des tokens
 const ACCESS_TOKEN_EXPIRY = "15m"; // 15 minutes
@@ -47,7 +54,7 @@ export async function verifyPassword(
  * Génère un access token JWT
  */
 export function generateAccessToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_ACCESS_SECRET, {
+  return jwt.sign(payload, JWT_ACCESS_SECRET_SAFE, {
     expiresIn: ACCESS_TOKEN_EXPIRY,
   });
 }
@@ -56,7 +63,7 @@ export function generateAccessToken(payload: TokenPayload): string {
  * Génère un refresh token JWT
  */
 export function generateRefreshToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_REFRESH_SECRET, {
+  return jwt.sign(payload, JWT_REFRESH_SECRET_SAFE, {
     expiresIn: REFRESH_TOKEN_EXPIRY,
   });
 }
@@ -76,9 +83,9 @@ export function generateTokenPair(payload: TokenPayload): TokenPair {
  */
 export function verifyAccessToken(token: string): TokenPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_ACCESS_SECRET) as TokenPayload;
+    const decoded = jwt.verify(token, JWT_ACCESS_SECRET_SAFE) as TokenPayload;
     return decoded;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -88,9 +95,9 @@ export function verifyAccessToken(token: string): TokenPayload | null {
  */
 export function verifyRefreshToken(token: string): TokenPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_REFRESH_SECRET) as TokenPayload;
+    const decoded = jwt.verify(token, JWT_REFRESH_SECRET_SAFE) as TokenPayload;
     return decoded;
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -108,3 +115,13 @@ export function extractTokenFromHeader(
   
   return parts[1];
 }
+
+/**
+ * Alias pour verifyPassword (compatibilité tests)
+ */
+export const comparePassword = verifyPassword;
+
+/**
+ * Alias pour generateTokenPair (compatibilité tests)
+ */
+export const generateTokens = generateTokenPair;

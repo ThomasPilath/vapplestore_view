@@ -30,8 +30,8 @@ interface AppBarChartProps {
  */
 export default function AppBarChart({ data, hideSundays }: AppBarChartProps) {
   // Renderer pour afficher un label centré uniquement si la valeur > 0
-  const renderCenteredValue = (props: any) => {
-    const { value, x, y, width, height } = props as {value?: number; x?: number; y?: number; width?: number; height?: number}
+  const renderCenteredValue = (props: Record<string, unknown>) => {
+    const { value, x, y, width, height } = props as {value?: number; x?: number; y?: number; width?: number; height?: number};
     if (!value || value <= 0 || x === undefined || y === undefined || width === undefined || height === undefined) {
       return null
     }
@@ -59,14 +59,14 @@ export default function AppBarChart({ data, hideSundays }: AppBarChartProps) {
         <YAxis />
         {!hideSundays && (
           <Bar dataKey="dimanche" stackId="a" fill="#9ca3af" name="Dimanche">
-            <LabelList dataKey="dimanche" content={renderCenteredValue} />
+            <LabelList dataKey="dimanche" content={renderCenteredValue as unknown as undefined} />
           </Bar>
         )}
         <Bar dataKey="ouvert" stackId="a" fill="#10b981" name="Ouvert">
-          <LabelList dataKey="ouvert" content={renderCenteredValue} />
+          <LabelList dataKey="ouvert" content={renderCenteredValue as unknown as undefined} />
         </Bar>
         <Bar dataKey="fermé" stackId="a" fill="#ef4444" name="Fermé">
-          <LabelList dataKey="fermé" content={renderCenteredValue} />
+          <LabelList dataKey="fermé" content={renderCenteredValue as unknown as undefined} />
         </Bar>
       </BarChart>
     </ResponsiveContainer>

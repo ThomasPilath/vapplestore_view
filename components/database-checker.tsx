@@ -8,11 +8,11 @@ import { useEffect } from "react";
 export function DatabaseChecker() {
   useEffect(() => {
     // Déclencher la vérification de la DB au premier chargement
-    fetch("/api/db-check")
+    fetch("/api/db-check", { credentials: "include" })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
-          console.log("✅ Database structure verified:", data.message);
+          console.warn("✅ Database structure verified:", data.message);
         }
       })
       .catch((error) => {

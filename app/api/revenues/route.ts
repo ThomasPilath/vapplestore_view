@@ -5,9 +5,22 @@ import { CreateRevenueSchema } from "@/lib/validators";
 import { successResponse, errorResponse, validationErrorResponse } from "@/lib/api-response";
 import { initializeDatabase } from "@/lib/db-init";
 import { authenticate, unauthorizedResponse } from "@/lib/auth-middleware";
+import { logAudit } from "@/lib/audit";
+import { getClientIp } from "@/lib/rate-limit";
 import logger from "@/lib/logger";
 
-function mapRevenueRow(row: any) {
+interface RevenueRow {
+  id?: string;
+  base20?: string | number;
+  tva20?: string | number;
+  base5_5?: string | number;
+  tva5_5?: string | number;
+  date?: string;
+  createdAt?: string | Date;
+  updatedAt?: string | Date;
+}
+
+function mapRevenueRow(row: RevenueRow) {
   const base20 = Number(row.base20 ?? 0);
   const tva20 = Number(row.tva20 ?? 0);
   const base5_5 = Number(row.base5_5 ?? 0);
@@ -15,29 +28,38 @@ function mapRevenueRow(row: any) {
   const totalHT = base20 + base5_5;
   const totalTTC = totalHT + tva20 + tva5_5;
 
+  const formatDate = (d: unknown): string | undefined => {
+    if (d instanceof Date) return d.toISOString().slice(0, 10);
+    if (typeof d === 'string') return d;
+    return undefined;
+  };
+
+  const formatDateTime = (d: unknown): string | undefined => {
+    if (d instanceof Date) return d.toISOString();
+    if (typeof d === 'string') return d;
+    return undefined;
+  };
+
   return {
     id: row.id,
-    date: row.date instanceof Date ? row.date.toISOString().slice(0, 10) : row.date,
+    date: formatDate(row.date),
     base20,
     tva20,
     base5_5,
     tva5_5,
-    createdAt: row.createdAt instanceof Date
-      ? row.createdAt.toISOString()
-      : row.createdAt,
-    updatedAt: row.updatedAt instanceof Date
-      ? row.updatedAt.toISOString()
-      : row.updatedAt,
+    createdAt: formatDateTime(row.createdAt),
+    updatedAt: formatDateTime(row.updatedAt),
     totalHT,
     totalTTC,
   };
 }
 
-async function safeQuery(sql: string, params: any[] = []) {
+async function safeQuery(sql: string, params: (string | number)[] = []) {
   try {
     return await query(sql, params);
-  } catch (error: any) {
-    if (error?.code === "ER_NO_SUCH_TABLE") {
+  } catch (error: unknown) {
+    const dbError = error as { code?: string };
+    if (dbError?.code === "ER_NO_SUCH_TABLE") {
       await initializeDatabase();
       return await query(sql, params);
     }
@@ -61,8 +83,9 @@ export async function GET(req: NextRequest) {
     const searchParams = req.nextUrl.searchParams;
     const month = searchParams.get("month");
 
+    // Récupérer les revenus
     let sql = "SELECT * FROM revenues ORDER BY date DESC";
-    const params: any[] = [];
+    const params: (string | number)[] = [];
 
     if (month) {
       sql = "SELECT * FROM revenues WHERE DATE_FORMAT(date, '%Y-%m') = ? ORDER BY date DESC";
@@ -99,8 +122,8 @@ export async function POST(req: NextRequest) {
     const timestamp = new Date().toISOString().slice(0, 19).replace('T', ' ');
 
     const sql = `
-      INSERT INTO revenues (id, date, base20, tva20, base5_5, tva5_5, createdAt, updatedAt)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO revenues (id, date, base20, tva20, base5_5, tva5_5, createdAt, createdBy, updatedAt)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
     await safeQuery(sql, [
@@ -111,8 +134,20 @@ export async function POST(req: NextRequest) {
       validatedData.base5_5,
       validatedData.tva5_5,
       timestamp,
+      user.userId,
       timestamp,
     ]);
+
+    // Audit trail
+    await logAudit({
+      userId: user.userId,
+      action: "CREATE",
+      tableName: "revenues",
+      recordId: id,
+      changes: validatedData,
+      ip: getClientIp(req),
+      userAgent: req.headers.get("user-agent") || undefined,
+    });
 
     const totalHT = validatedData.base20 + validatedData.base5_5;
     const totalTTC = totalHT + validatedData.tva20 + validatedData.tva5_5;
@@ -128,13 +163,13 @@ export async function POST(req: NextRequest) {
       },
       201
     );
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error("❌ POST /api/revenues error:", error);
 
     // Gestion des erreurs Zod
-    if (error.name === "ZodError") {
+    if ((error as { name?: string }).name === "ZodError") {
       const fieldErrors: Record<string, string[]> = {};
-      error.errors.forEach((err: any) => {
+      (error as { errors?: Array<{path: string[]; message: string}> }).errors?.forEach((err) => {
         const field = err.path.join(".");
         fieldErrors[field] = [err.message];
       });
@@ -157,8 +192,19 @@ export async function DELETE(req: NextRequest) {
   }
 
   try {
-    await query("DELETE FROM revenues");
-    return successResponse({ message: "All revenues deleted" });
+    // Soft delete au lieu de DELETE physique
+    await query("UPDATE revenues SET deletedAt = NOW(), updatedBy = ? WHERE deletedAt IS NULL", [user.userId]);
+    
+    // Audit trail
+    await logAudit({
+      userId: user.userId,
+      action: "DELETE",
+      tableName: "revenues",
+      ip: getClientIp(req),
+      userAgent: req.headers.get("user-agent") || undefined,
+    });
+    
+    return successResponse({ message: "All revenues soft deleted" });
   } catch (error) {
     logger.error("DELETE /api/revenues error", error);
     return errorResponse("Failed to delete revenues", 500);

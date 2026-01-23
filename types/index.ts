@@ -94,3 +94,44 @@ export type CreatePurchasePayload = {
   shippingFee: number;
   totalTTC: number;
 };
+/** Ligne brute de la base de données - Purchase */
+export type PurchaseRow = {
+  id: string;
+  date: string | Date;
+  totalHT: string | number;
+  tva: string | number;
+  shippingFee: string | number;
+  totalTTC: string | number;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  createdBy?: string;
+  deletedAt?: string | Date | null;
+};
+
+/** Ligne brute de la base de données - User */
+export type UserRow = {
+  id: string;
+  username: string;
+  password: string;
+  role: string;
+  createdAt: string | Date;
+  updatedAt?: string | Date;
+  createdBy?: string;
+  deletedAt?: string | Date | null;
+  roleName?: string;
+  roleLevel?: number;
+};
+
+/** Ligne brute de la base de données - Role */
+export type RoleRow = {
+  id: string;
+  roleName: string;
+  level: number;
+};
+
+/** Erreur Zod formatée */
+export type ZodErrorField = {
+  path: (string | number)[];
+  message: string;
+  code: string;
+};

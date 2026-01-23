@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const users = await query(
       "SELECT settings FROM users WHERE id = ?",
       [user.userId]
-    ) as any[];
+    ) as Array<{settings?: string | null}>;
 
     if (users.length === 0) {
       return NextResponse.json(
@@ -95,7 +95,7 @@ export async function PUT(request: NextRequest) {
     const users = await query(
       "SELECT settings FROM users WHERE id = ?",
       [user.userId]
-    ) as any[];
+    ) as Array<{settings?: string | null}>;
 
     if (users.length === 0) {
       return NextResponse.json(

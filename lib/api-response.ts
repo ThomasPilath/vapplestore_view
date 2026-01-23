@@ -60,3 +60,19 @@ export function errorResponse(
 export function validationErrorResponse(errors: Record<string, string[]>) {
   return errorResponse("Validation error", 400, errors);
 }
+
+/**
+ * Objet helper avec toutes les méthodes de réponse API
+ */
+export const apiResponse = {
+  // Success responses
+  ok: <T>(data: T) => successResponse(data, 200),
+  created: <T>(data: T) => successResponse(data, 201),
+  
+  // Error responses
+  badRequest: (error: string, details?: Record<string, string[]>) => errorResponse(error, 400, details),
+  unauthorized: (error: string = "Unauthorized") => errorResponse(error, 401),
+  forbidden: (error: string = "Forbidden") => errorResponse(error, 403),
+  notFound: (error: string = "Not found") => errorResponse(error, 404),
+  internalError: (error: string = "Internal server error") => errorResponse(error, 500),
+};

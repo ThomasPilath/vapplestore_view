@@ -27,12 +27,12 @@ export async function getDB() {
   }
 }
 
-export async function query(sql: string, values?: any[]) {
+export async function query(sql: string, values?: (string | number | boolean | null)[]): Promise<Record<string, unknown>[]> {
   const db = await getDB();
   const connection = await db.getConnection();
   try {
     const [results] = await connection.execute(sql, values || []);
-    return results;
+    return (Array.isArray(results) ? results : []) as Record<string, unknown>[];
   } finally {
     connection.release();
   }

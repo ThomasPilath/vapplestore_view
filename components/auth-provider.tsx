@@ -1,12 +1,12 @@
 /**
  * AuthProvider - Composant de protection de l'application
- * Gère l'authentification, affiche la modale de login si nécessaire
- * et rafraîchit automatiquement les tokens
+ * Gère l'authentification via cookies HttpOnly, affiche la modale de login si nécessaire
+ * et rafraîchit automatiquement la session
  */
 
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { useAuthStore } from "@/hook/auth.store";
 import { storeSettings } from "@/hook/settings.store";
 import { LoginModal } from "@/components/login-modal";
@@ -16,73 +16,47 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const { isAuthenticated, isLoading, accessToken, refreshToken, setAccessToken, logout, setLoading } = useAuthStore();
+  const { isAuthenticated, isLoading, setAuth, logout, setLoading } = useAuthStore();
 
-  // Fonction pour rafraîchir le token
-  const refreshAccessToken = async () => {
-    if (!refreshToken) {
-      logout();
-      return false;
-    }
+  const fetchCurrentUser = useCallback(async () => {
+    const response = await fetch("/api/auth/me", { credentials: "include" });
+    if (!response.ok) return null;
+    const data = await response.json();
+    return data.user;
+  }, []);
 
-    try {
-      const response = await fetch("/api/auth/refresh", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ refreshToken }),
-      });
-
-      if (!response.ok) {
-        // Token expiré ou invalide, réinitialiser l'état
-        setLoading(false);
-        return false;
-      }
-
-      const data = await response.json();
-      setAccessToken(data.accessToken);
-      return true;
-    } catch (error) {
-      // En cas d'erreur réseau ou autre, déconnecter par sécurité
-      logout();
-      return false;
-    }
-  };
+  const refreshSession = useCallback(async () => {
+    const response = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
+    return response.ok;
+  }, []);
 
   // Vérifier l'authentification au montage
   useEffect(() => {
     const checkAuth = async () => {
-      if (!accessToken) {
-        setLoading(false);
-        return;
-      }
-
-      // Tester si le token est valide en faisant un appel simple
       try {
-        const response = await fetch("/api/db-check", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
+        let user = await fetchCurrentUser();
 
-        if (response.status === 401) {
-          // Token expiré, essayer de le rafraîchir
-          const refreshed = await refreshAccessToken();
-          if (!refreshed) {
-            setLoading(false);
+        if (!user) {
+          const refreshed = await refreshSession();
+          if (refreshed) {
+            user = await fetchCurrentUser();
           }
-        } else {
-          setLoading(false);
         }
-      } catch (error) {
-        // En cas d'erreur, on considère l'utilisateur comme non authentifié
+
+        if (user) {
+          setAuth(user);
+        } else {
+          logout();
+        }
+      } catch {
+        logout();
+      } finally {
         setLoading(false);
       }
     };
 
     checkAuth();
-  }, []);
+  }, [fetchCurrentUser, refreshSession, setAuth, logout, setLoading]);
 
   // Charger les settings utilisateur une fois authentifié
   useEffect(() => {
@@ -91,9 +65,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const loadUserSettings = async () => {
       try {
         const response = await fetch("/api/user/settings", {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
+          credentials: "include",
         });
 
         if (response.ok) {
@@ -108,18 +80,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     };
 
     loadUserSettings();
-  }, [isAuthenticated, accessToken]);
+  }, [isAuthenticated]);
 
-  // Configurer le rafraîchissement automatique du token (toutes les 10 minutes)
+  // Rafraîchir périodiquement la session (toutes les 10 minutes)
   useEffect(() => {
     if (!isAuthenticated) return;
 
     const interval = setInterval(() => {
-      refreshAccessToken();
-    }, 10 * 60 * 1000); // 10 minutes
+      refreshSession()
+        .then((ok) => {
+          if (!ok) logout();
+        })
+        .catch(() => logout());
+    }, 10 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated, refreshToken]);
+  }, [isAuthenticated, logout, refreshSession]);
 
   // Afficher un écran de chargement pendant la vérification
   if (isLoading) {

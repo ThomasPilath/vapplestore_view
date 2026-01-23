@@ -40,7 +40,7 @@ interface Role {
 }
 
 export default function UsersManagementPage() {
-  const { user: currentUser, accessToken } = useAuthStore();
+  const { user: currentUser } = useAuthStore();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
@@ -76,7 +76,7 @@ export default function UsersManagementPage() {
 
       // Charger les utilisateurs
       const usersRes = await fetch("/api/admin/users", {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        credentials: "include",
       });
 
       if (!usersRes.ok) throw new Error("Erreur lors du chargement des utilisateurs");
@@ -84,7 +84,7 @@ export default function UsersManagementPage() {
 
       // Charger les rôles
       const rolesRes = await fetch("/api/admin/roles", {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        credentials: "include",
       });
 
       if (!rolesRes.ok) throw new Error("Erreur lors du chargement des rôles");
@@ -92,8 +92,9 @@ export default function UsersManagementPage() {
 
       setUsers(usersData.data);
       setRoles(rolesData.data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || "Erreur inconnue");
     } finally {
       setIsLoading(false);
     }
@@ -139,7 +140,7 @@ export default function UsersManagementPage() {
 
       if (editingUser) {
         // Mise à jour
-        const body: any = { roleId: formData.roleId };
+        const body: Record<string, string | undefined> = { roleId: formData.roleId };
         if (formData.username !== editingUser.username) {
           body.username = formData.username;
         }
@@ -151,8 +152,8 @@ export default function UsersManagementPage() {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
           },
+          credentials: "include",
           body: JSON.stringify(body),
         });
 
@@ -162,14 +163,14 @@ export default function UsersManagementPage() {
         }
       } else {
         // Création
-        console.log("📝 Création d'un utilisateur avec les données:", formData);
+        console.warn("📝 Création d'un utilisateur avec les données:", formData);
         
         const res = await fetch("/api/admin/users", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
           },
+          credentials: "include",
           body: JSON.stringify(formData),
         });
 
@@ -182,8 +183,9 @@ export default function UsersManagementPage() {
 
       setIsModalOpen(false);
       loadData();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || "Erreur inconnue");
     } finally {
       setIsSaving(false);
     }
@@ -198,7 +200,7 @@ export default function UsersManagementPage() {
       setError("");
       const res = await fetch(`/api/admin/users?id=${userId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${accessToken}` },
+        credentials: "include",
       });
 
       if (!res.ok) {
@@ -207,8 +209,9 @@ export default function UsersManagementPage() {
       }
 
       loadData();
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err as { message?: string };
+      setError(error.message || "Erreur inconnue");
     }
   };
 

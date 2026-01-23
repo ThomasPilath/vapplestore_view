@@ -22,7 +22,7 @@ async function createUser(username: string, password: string, roleName: string) 
     const existingUsers = await query(
       "SELECT id FROM users WHERE username = ?",
       [username]
-    ) as any[];
+    ) as Array<{id: string}>;
 
     if (existingUsers.length > 0) {
       console.error(`❌ L'utilisateur "${username}" existe déjà`);
@@ -33,13 +33,13 @@ async function createUser(username: string, password: string, roleName: string) 
     const roles = await query(
       "SELECT id, roleName, level FROM roles WHERE LOWER(roleName) = LOWER(?)",
       [roleName]
-    ) as any[];
+    ) as unknown as Array<{id: string; roleName: string; level: number}>;
 
     if (roles.length === 0) {
       console.error(`❌ Le rôle "${roleName}" n'existe pas`);
       console.log("\n📋 Rôles disponibles:");
-      const allRoles = await query("SELECT roleName, level FROM roles ORDER BY level") as any[];
-      allRoles.forEach((r: any) => {
+      const allRoles = await query("SELECT roleName, level FROM roles ORDER BY level") as unknown as Array<{roleName: string; level: number}>;
+      allRoles.forEach((r: {roleName: string; level: number}) => {
         console.log(`  - ${r.roleName} (level: ${r.level})`);
       });
       process.exit(1);
@@ -86,7 +86,7 @@ async function initRoles() {
     const existing = await query(
       "SELECT id FROM roles WHERE LOWER(roleName) = LOWER(?)",
       [role.roleName]
-    ) as any[];
+    ) as Array<{id: string}>;
 
     if (existing.length === 0) {
       await query(

@@ -31,7 +31,7 @@ export default function Sidemenu({ className }: { className?: string }) {
   const handleLogout = async () => {
     try {
       await fetch("/api/auth/logout", { method: "POST" })
-    } catch (error) {
+    } catch {
       // Ignorer les erreurs de logout API, on déconnecte quand même localement
     } finally {
       logout()

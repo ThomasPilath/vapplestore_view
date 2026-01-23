@@ -14,7 +14,7 @@ async function migrate() {
     // Vérifier si la colonne existe déjà
     const columns = await query(
       "SHOW COLUMNS FROM users WHERE Field = 'settings'"
-    ) as any[];
+    ) as Array<Record<string, unknown>>;
 
     if (columns.length > 0) {
       console.log("✅ La colonne 'settings' existe déjà, migration non nécessaire.");

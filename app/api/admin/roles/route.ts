@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
   try {
     const roles = await query(
       "SELECT id, roleName, level FROM roles ORDER BY level ASC"
-    ) as any[];
+    ) as Array<{id: string; roleName: string; level: number}>;
 
     return NextResponse.json({
       success: true,

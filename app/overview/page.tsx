@@ -13,8 +13,8 @@ import AppBarChart from "@/components/charts/AppBarChart"
 import AppPieChart from "@/components/charts/AppPieChart"
 import AppLineChart from "@/components/charts/AppLineChart"
 import { getDaysInMonth, calculateDailyStats } from "@/lib/calculations"
-import type { RevenueEntry } from "@/hook/revenue.store"
-import type { PurchaseEntry } from "@/hook/purchase.store"
+import type { RevenueEntry as _RevenueEntry } from "@/hook/revenue.store"
+import type { PurchaseEntry as _PurchaseEntry } from "@/hook/purchase.store"
 
 // Format pour afficher les montants en EUR
 const currencyFormatter = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR" })
@@ -40,14 +40,14 @@ export default function Overview() {
   // Charger les données au démarrage et quand l'utilisateur se connecte
   useEffect(() => {
     if (isAuthenticated) {
-      console.log("🔄 Chargement des données (authentification détectée)");
+      console.warn("🔄 Chargement des données (authentification détectée)");
       storeRevenue.getState().fetchEntries()
       storePurchase.getState().fetchEntries()
     }
   }, [isAuthenticated])
 
   // Calculer les données par mois
-  const monthlyData = useMemo(() => {
+  const _monthlyData = useMemo(() => {
     const map = new Map<string, { month: string; revenue: number; expenses: number }>()
 
     entries.forEach((e) => {
@@ -89,7 +89,7 @@ export default function Overview() {
     [purchases, selectedMonth]
   )
 
-  const netProfit = totalRevenue - totalExpenses
+  const _netProfit = totalRevenue - totalExpenses
 
   // Statistiques par jour du mois sélectionné
   const dailyStats = useMemo(

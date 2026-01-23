@@ -1,7 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react";
-import { useAuthStore } from "@/hook/auth.store";
+import { useCallback, useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { storeSettings } from "@/hook/settings.store";
 
 export default function Settings() {
-  const { accessToken } = useAuthStore();
   const { theme, setTheme } = useTheme();
   const hideSundays = storeSettings((s) => s.hideSundays);
   const setHideSundays = storeSettings((s) => s.setHideSundays);
@@ -19,15 +17,11 @@ export default function Settings() {
   const [message, setMessage] = useState("");
 
   // Charger les paramètres utilisateur
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
   const loadSettings = async () => {
     try {
       setIsLoading(true);
       const res = await fetch("/api/user/settings", {
-        headers: { Authorization: `Bearer ${accessToken}` },
+        credentials: "include",
       });
 
       if (res.ok) {
@@ -44,7 +38,12 @@ export default function Settings() {
     }
   };
 
-  const saveSettings = async () => {
+  // Charger les paramètres au montage
+  useEffect(() => {
+    loadSettings();
+  }, []);
+
+  const saveSettings = useCallback(async () => {
     try {
       setIsSaving(true);
       setMessage("");
@@ -53,8 +52,8 @@ export default function Settings() {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
         },
+        credentials: "include",
         body: JSON.stringify({
           theme,
           hideSundays,
@@ -73,14 +72,14 @@ export default function Settings() {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [theme, hideSundays]);
 
   // Sauvegarder automatiquement le thème quand il change
   useEffect(() => {
     if (!isLoading && theme) {
       saveSettings();
     }
-  }, [theme]);
+  }, [theme, isLoading, saveSettings]);
 
   if (isLoading) {
     return (
