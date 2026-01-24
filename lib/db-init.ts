@@ -29,37 +29,47 @@ async function seedRoles() {
 }
 
 async function seedAdmin() {
-  if (adminSeeded) return;
+  console.log("👤 [SEED-ADMIN] Début de la création de l'utilisateur admin...");
+  
+  if (adminSeeded) {
+    console.log("ℹ️  [SEED-ADMIN] Admin déjà seedé dans ce processus");
+    return;
+  }
   adminSeeded = true;
 
   const adminUsername = process.env.ADMIN_USERNAME;
   const adminPassword = process.env.ADMIN_PASSWORD;
 
+  console.log(`🔍 [SEED-ADMIN] Variables d'environnement: ADMIN_USERNAME=${adminUsername ? '✓ défini' : '✗ manquant'}, ADMIN_PASSWORD=${adminPassword ? '✓ défini' : '✗ manquant'}`);
+
   if (!adminUsername || !adminPassword) {
-    console.log("ℹ️  ADMIN_USERNAME/ADMIN_PASSWORD non fournis, skipping admin seed");
+    console.log("⚠️  [SEED-ADMIN] ADMIN_USERNAME/ADMIN_PASSWORD non fournis, skipping admin seed");
     return;
   }
 
+  console.log(`🔍 [SEED-ADMIN] Vérification si l'utilisateur '${adminUsername}' existe...`);
   const existing = (await query(
     "SELECT id FROM users WHERE username = ?",
     [adminUsername]
   )) as Array<{ id: string }>;
 
   if (existing.length > 0) {
-    console.log(`ℹ️  Admin '${adminUsername}' existe déjà, aucune action.`);
+    console.log(`✅ [SEED-ADMIN] Admin '${adminUsername}' existe déjà (id=${existing[0].id})`);
     return;
   }
 
+  console.log(`🔐 [SEED-ADMIN] Hashage du mot de passe...`);
   const hashed = await hashPassword(adminPassword);
   const userId = randomUUID();
 
+  console.log(`💾 [SEED-ADMIN] Insertion de l'utilisateur dans la base...`);
   await query(
     `INSERT INTO users (id, username, password, role, settings, createdAt)
      VALUES (?, ?, ?, ?, '{}', NOW())`,
     [userId, adminUsername, hashed, "3"]
   );
 
-  console.log(`✅ Admin '${adminUsername}' créé (id=${userId})`);
+  console.log(`✅ [SEED-ADMIN] Admin '${adminUsername}' créé avec succès (id=${userId}, role=3)`);
 }
 
 export async function initializeDatabase() {
@@ -120,10 +130,15 @@ export async function initializeDatabase() {
     `);
 
     // Seed roles + admin (si variables présentes)
+    console.log("🔧 [DB-INIT] Initialisation des rôles...");
     await seedRoles();
+    console.log("✅ [DB-INIT] Rôles initialisés");
+    
+    console.log("🔧 [DB-INIT] Initialisation de l'admin...");
     await seedAdmin();
+    console.log("✅ [DB-INIT] Processus de seed admin terminé");
 
-    console.log("✅ Database tables initialized successfully");
+    console.log("✅ [DB-INIT] Database tables initialized successfully");
   } catch (error) {
     console.error("❌ Database initialization error:", error);
     throw error;

@@ -11,8 +11,11 @@ import logger from "@/lib/logger";
 let isInitialized = false;
 
 export async function POST() {
+  console.log("🔄 [INIT-DB] Début de l'initialisation de la base de données...");
+  
   // Garder en mémoire si déjà initialisé (une seule fois par process)
   if (isInitialized) {
+    console.log("ℹ️  [INIT-DB] Base de données déjà initialisée dans ce processus");
     return NextResponse.json(
       {
         success: true,
@@ -24,7 +27,9 @@ export async function POST() {
 
   try {
     isInitialized = true;
+    console.log("🔧 [INIT-DB] Appel de initializeDatabase()...");
     await initializeDatabase();
+    console.log("✅ [INIT-DB] Initialisation terminée avec succès");
 
     return NextResponse.json(
       {
@@ -34,6 +39,7 @@ export async function POST() {
       { status: 200 }
     );
   } catch (error) {
+    console.error("❌ [INIT-DB] Erreur lors de l'initialisation:", error);
     logger.error("Database initialization error", error);
     return NextResponse.json(
       {
