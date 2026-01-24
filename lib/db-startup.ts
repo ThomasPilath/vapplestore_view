@@ -149,6 +149,22 @@ async function createTablesIfNotExist() {
     `);
     console.log("  ✓ Table 'revenues' vérifiée/créée");
 
+    // Vérifier et ajouter la colonne createdBy si elle n'existe pas
+    try {
+      await query(`
+        ALTER TABLE revenues ADD COLUMN createdBy VARCHAR(36) DEFAULT NULL
+      `);
+      console.log("  ✓ Colonne 'createdBy' ajoutée à la table revenues");
+    } catch (error: any) {
+      // Si l'erreur est "Duplicate column", c'est OK, la colonne existe déjà
+      if (error.code === 'ER_DUP_FIELDNAME') {
+        console.log("  ℹ️  Colonne 'createdBy' existe déjà dans revenues");
+      } else {
+        // Autre erreur, on la log mais on continue
+        console.warn("  ⚠️  Erreur lors de l'ajout de 'createdBy':", error.message);
+      }
+    }
+
     // Table des purchases
     await query(`
       CREATE TABLE IF NOT EXISTS purchases (
@@ -164,6 +180,22 @@ async function createTablesIfNotExist() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("  ✓ Table 'purchases' vérifiée/créée");
+
+    // Vérifier et ajouter la colonne createdBy si elle n'existe pas
+    try {
+      await query(`
+        ALTER TABLE purchases ADD COLUMN createdBy VARCHAR(36) DEFAULT NULL
+      `);
+      console.log("  ✓ Colonne 'createdBy' ajoutée à la table purchases");
+    } catch (error: any) {
+      // Si l'erreur est "Duplicate column", c'est OK, la colonne existe déjà
+      if (error.code === 'ER_DUP_FIELDNAME') {
+        console.log("  ℹ️  Colonne 'createdBy' existe déjà dans purchases");
+      } else {
+        // Autre erreur, on la log mais on continue
+        console.warn("  ⚠️  Erreur lors de l'ajout de 'createdBy':", error.message);
+      }
+    }
 
     // Table audit
     await query(`
