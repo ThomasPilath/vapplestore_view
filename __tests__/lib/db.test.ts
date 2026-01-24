@@ -102,9 +102,9 @@ describe("Database Operations", () => {
       try {
         await query("INVALID SQL QUERY");
         // Si pas d'erreur, c'est acceptable (dépend de la DB)
-      } catch {
+      } catch (error) {
         // Erreur attendue
-        expect(_error).toBeDefined();
+        expect(error).toBeDefined();
       }
     });
 

@@ -90,15 +90,7 @@ export async function getDB() {
       });
     }, 30, 1000); // 30 tentatives, commençant par 1s de délai
 
-    // Gestion des erreurs de pool
-    pool!.on("connection", () => {
-      console.log("🔌 New database connection established");
-    });
-
-    pool!.on("error", (error) => {
-      console.error("❌ Database pool error:", error);
-    });
-
+    // Le pool est créé et testé avec succès
     return pool!;
   } catch (error) {
     isInitializing = false;
