@@ -117,6 +117,22 @@ async function createTablesIfNotExist() {
     `);
     console.log("  ✓ Table 'users' vérifiée/créée");
 
+    // Vérifier et ajouter la colonne settings si elle n'existe pas
+    try {
+      await query(`
+        ALTER TABLE users ADD COLUMN settings JSON DEFAULT NULL
+      `);
+      console.log("  ✓ Colonne 'settings' ajoutée à la table users");
+    } catch (error: any) {
+      // Si l'erreur est "Duplicate column", c'est OK, la colonne existe déjà
+      if (error.code === 'ER_DUP_FIELDNAME') {
+        console.log("  ℹ️  Colonne 'settings' existe déjà dans users");
+      } else {
+        // Autre erreur, on la log mais on continue
+        console.warn("  ⚠️  Erreur lors de l'ajout de 'settings':", error.message);
+      }
+    }
+
     // Table des revenues
     await query(`
       CREATE TABLE IF NOT EXISTS revenues (

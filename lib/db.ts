@@ -59,8 +59,6 @@ export async function getDB() {
     queueLimit: 0,
     // Timeouts pour éviter les connexions bloquées
     connectTimeout: 10000, // 10 secondes pour établir la connexion
-    acquireTimeout: 10000, // 10 secondes pour acquérir une connexion du pool
-    timeout: 60000, // 60 secondes max pour une requête (pour les longues requêtes)
     // Gestion des connexions perdues
     enableKeepAlive: true,
     keepAliveInitialDelay: 10000, // Envoyer un keepalive toutes les 10s
