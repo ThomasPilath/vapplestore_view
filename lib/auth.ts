@@ -6,15 +6,33 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 
 // Secrets JWT - doivent être définis dans l'environnement (aucun fallback pour éviter les secrets faibles)
-const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
+// Lazy loading : vérification faite seulement lors de l'utilisation, pas au module load
+function getJWTSecrets() {
+  const JWT_ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
+  const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
 
-if (!JWT_ACCESS_SECRET || !JWT_REFRESH_SECRET) {
-  throw new Error("JWT_ACCESS_SECRET et JWT_REFRESH_SECRET doivent être définis dans l'environnement");
+  if (!JWT_ACCESS_SECRET || !JWT_REFRESH_SECRET) {
+    throw new Error("JWT_ACCESS_SECRET et JWT_REFRESH_SECRET doivent être définis dans l'environnement");
+  }
+
+  return {
+    access: JWT_ACCESS_SECRET as string,
+    refresh: JWT_REFRESH_SECRET as string,
+  };
 }
 
-const JWT_ACCESS_SECRET_SAFE = JWT_ACCESS_SECRET as string;
-const JWT_REFRESH_SECRET_SAFE = JWT_REFRESH_SECRET as string;
+// Cache pour éviter les appels répétés (après première utilisation)
+let cachedSecrets: ReturnType<typeof getJWTSecrets> | null = null;
+
+function getCachedJWTSecrets() {
+  if (!cachedSecrets) {
+    cachedSecrets = getJWTSecrets();
+  }
+  return cachedSecrets;
+}
+
+const JWT_ACCESS_SECRET_SAFE = () => getCachedJWTSecrets().access;
+const JWT_REFRESH_SECRET_SAFE = () => getCachedJWTSecrets().refresh;
 
 // Durées de validité des tokens
 const ACCESS_TOKEN_EXPIRY = "15m"; // 15 minutes
@@ -54,7 +72,7 @@ export async function verifyPassword(
  * Génère un access token JWT
  */
 export function generateAccessToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_ACCESS_SECRET_SAFE, {
+  return jwt.sign(payload, JWT_ACCESS_SECRET_SAFE(), {
     expiresIn: ACCESS_TOKEN_EXPIRY,
   });
 }
@@ -63,7 +81,7 @@ export function generateAccessToken(payload: TokenPayload): string {
  * Génère un refresh token JWT
  */
 export function generateRefreshToken(payload: TokenPayload): string {
-  return jwt.sign(payload, JWT_REFRESH_SECRET_SAFE, {
+  return jwt.sign(payload, JWT_REFRESH_SECRET_SAFE(), {
     expiresIn: REFRESH_TOKEN_EXPIRY,
   });
 }
@@ -83,7 +101,7 @@ export function generateTokenPair(payload: TokenPayload): TokenPair {
  */
 export function verifyAccessToken(token: string): TokenPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_ACCESS_SECRET_SAFE) as TokenPayload;
+    const decoded = jwt.verify(token, JWT_ACCESS_SECRET_SAFE()) as TokenPayload;
     return decoded;
   } catch {
     return null;
@@ -95,7 +113,7 @@ export function verifyAccessToken(token: string): TokenPayload | null {
  */
 export function verifyRefreshToken(token: string): TokenPayload | null {
   try {
-    const decoded = jwt.verify(token, JWT_REFRESH_SECRET_SAFE) as TokenPayload;
+    const decoded = jwt.verify(token, JWT_REFRESH_SECRET_SAFE()) as TokenPayload;
     return decoded;
   } catch {
     return null;
