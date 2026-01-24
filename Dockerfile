@@ -33,11 +33,13 @@ COPY app ./app
 COPY components ./components
 COPY hook ./hook
 COPY lib ./lib
-COPY public ./public
 COPY types ./types
 COPY next.config.ts tsconfig.json ./
 COPY postcss.config.mjs eslint.config.mjs ./
 COPY components.json ./
+
+# Créer le dossier public (peut être vide)
+RUN mkdir -p public
 
 # Build Next.js avec Bun (utilise le runtime Bun, plus rapide)
 RUN bun run build
