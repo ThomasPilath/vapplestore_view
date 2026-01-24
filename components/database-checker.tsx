@@ -1,31 +1,14 @@
 /**
- * Composant client pour déclencher l'initialisation DB au démarrage
- * Appelé automatiquement au chargement du layout root
+ * DEPRECATED - Ce composant n'est plus utilisé
+ * 
+ * L'initialisation de la base de données se fait maintenant au démarrage du serveur
+ * via app/init.ts qui est importé dans app/layout.tsx
+ * 
+ * Cette approche garantit que la DB est initialisée AVANT que le serveur serve
+ * des requêtes utilisateur, au lieu d'attendre que le client charge la page.
  */
-"use client";
 
-import { useEffect } from "react";
-
+// Composant vide - à supprimer si vous nettoyez le code
 export function DatabaseChecker() {
-  useEffect(() => {
-    // Déclencher l'initialisation de la DB au premier chargement
-    // Cette route n'a pas besoin d'authentification
-    fetch("/api/init-db", {
-      method: "POST",
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          console.log("✅ Database initialized:", data.message);
-        } else {
-          console.warn("⚠️ Database init:", data.error);
-        }
-      })
-      .catch((error) => {
-        console.error("❌ Database initialization failed:", error);
-      });
-  }, []);
-
-  return null; // Ce composant ne rend rien
+  return null;
 }

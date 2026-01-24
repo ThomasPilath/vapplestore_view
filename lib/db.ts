@@ -2,9 +2,51 @@ import mysql from "mysql2/promise";
 
 // Pool de connexions réutilisable
 let pool: mysql.Pool | null = null;
+let isInitializing = false;
+
+// Fonction de retry avec backoff exponentiel
+async function retryWithBackoff<T>(
+  fn: () => Promise<T>,
+  maxRetries: number = 30,
+  initialDelayMs: number = 1000
+): Promise<T> {
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error) {
+      lastError = error as Error;
+      const delayMs = initialDelayMs * Math.pow(2, Math.min(attempt - 1, 5)); // Max 32s between retries
+      console.warn(
+        `⏳ Database connection attempt ${attempt}/${maxRetries} failed, retrying in ${delayMs}ms...`,
+        (error as Error).message
+      );
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+    }
+  }
+
+  throw new Error(
+    `Failed to connect to database after ${maxRetries} attempts. Last error: ${lastError?.message}`
+  );
+}
 
 export async function getDB() {
   if (pool) return pool;
+
+  // Éviter les initialisations multiples simultanées
+  if (isInitializing) {
+    // Attendre que l'initialisation se termine
+    let attempts = 0;
+    while (!pool && attempts < 100) {
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      attempts++;
+    }
+    if (!pool) throw new Error("Database initialization failed");
+    return pool;
+  }
+
+  isInitializing = true;
 
   const dbConfig = {
     host: process.env.DATABASE_HOST || "localhost",
@@ -28,21 +70,39 @@ export async function getDB() {
   };
 
   try {
-    pool = mysql.createPool(dbConfig);
-    console.log("✅ Database pool created successfully");
-    
+    // Utiliser retry avec backoff exponentiel pour attendre que MariaDB soit prêt
+    await retryWithBackoff(() => {
+      return new Promise<void>((resolve, reject) => {
+        const testPool = mysql.createPool(dbConfig);
+        
+        testPool
+          .getConnection()
+          .then((connection) => {
+            connection.release();
+            pool = testPool;
+            console.log("✅ Database pool created and tested successfully");
+            resolve();
+          })
+          .catch((error) => {
+            testPool.end().catch(() => {}); // Fermer le pool en cas d'erreur
+            reject(error);
+          });
+      });
+    }, 30, 1000); // 30 tentatives, commençant par 1s de délai
+
     // Gestion des erreurs de pool
-    pool.on('connection', (connection) => {
-      console.log('🔌 New database connection established');
+    pool!.on("connection", () => {
+      console.log("🔌 New database connection established");
     });
-    
-    pool.on('release', (connection) => {
-      // Connexion retournée au pool (optionnel, peut être verbeux)
+
+    pool!.on("error", (error) => {
+      console.error("❌ Database pool error:", error);
     });
-    
-    return pool;
+
+    return pool!;
   } catch (error) {
-    console.error("❌ Database pool error:", error);
+    isInitializing = false;
+    console.error("❌ Failed to create database pool:", error);
     throw error;
   }
 }
