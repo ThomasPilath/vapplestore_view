@@ -20,19 +20,19 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: "20"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm install
 
       - name: Lint
-        run: bun run lint || echo "Linting completed with warnings"
+        run: npm run lint || echo "Linting completed with warnings"
 
       - name: Type check
-        run: bun run build --dry-run || bun run tsc --noEmit || echo "Type check completed"
+        run: npm run type-check || echo "Type check completed"
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -67,13 +67,3 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            API_KEY=${{ secrets.API_KEY }}
-            DATABASE_HOST=${{ secrets.DATABASE_HOST }}
-            DATABASE_PORT=${{ secrets.DATABASE_PORT }}
-            DATABASE_NAME=${{ secrets.DATABASE_NAME }}
-            DATABASE_USER=${{ secrets.DATABASE_USER }}
-            DATABASE_PASSWORD=${{ secrets.DATABASE_PASSWORD }}
-            JWT_ACCESS_SECRET=${{ secrets.JWT_ACCESS_SECRET }}
-            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
-            ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
