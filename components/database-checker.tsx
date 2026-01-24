@@ -1,5 +1,6 @@
 /**
- * Composant client pour déclencher la vérification DB au chargement
+ * Composant client pour déclencher l'initialisation DB au démarrage
+ * Appelé automatiquement au chargement du layout root
  */
 "use client";
 
@@ -7,16 +8,22 @@ import { useEffect } from "react";
 
 export function DatabaseChecker() {
   useEffect(() => {
-    // Déclencher la vérification de la DB au premier chargement
-    fetch("/api/db-check", { credentials: "include" })
+    // Déclencher l'initialisation de la DB au premier chargement
+    // Cette route n'a pas besoin d'authentification
+    fetch("/api/init-db", {
+      method: "POST",
+      credentials: "include",
+    })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) {
-          console.warn("✅ Database structure verified:", data.message);
+          console.log("✅ Database initialized:", data.message);
+        } else {
+          console.warn("⚠️ Database init:", data.error);
         }
       })
       .catch((error) => {
-        console.error("❌ Database check failed:", error);
+        console.error("❌ Database initialization failed:", error);
       });
   }, []);
 

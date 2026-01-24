@@ -5,8 +5,62 @@
  */
 
 import { query } from "@/lib/db";
+import { hashPassword } from "@/lib/auth";
+import { randomUUID } from "crypto";
 
 let isInitialized = false;
+let adminSeeded = false;
+
+async function seedRoles() {
+  const roles = [
+    { id: "1", roleName: "vendeur", level: 0 },
+    { id: "2", roleName: "gestionnaire", level: 1 },
+    { id: "3", roleName: "admin", level: 2 },
+  ];
+
+  for (const role of roles) {
+    await query(
+      `INSERT INTO roles (id, roleName, level)
+       VALUES (?, ?, ?)
+       ON DUPLICATE KEY UPDATE roleName = VALUES(roleName), level = VALUES(level)` as string,
+      [role.id, role.roleName, role.level]
+    );
+  }
+}
+
+async function seedAdmin() {
+  if (adminSeeded) return;
+  adminSeeded = true;
+
+  const adminUsername = process.env.ADMIN_USERNAME;
+  const adminPassword = process.env.ADMIN_PASSWORD;
+
+  if (!adminUsername || !adminPassword) {
+    console.log("ℹ️  ADMIN_USERNAME/ADMIN_PASSWORD non fournis, skipping admin seed");
+    return;
+  }
+
+  const existing = (await query(
+    "SELECT id FROM users WHERE username = ?",
+    [adminUsername]
+  )) as Array<{ id: string }>;
+
+  if (existing.length > 0) {
+    console.log(`ℹ️  Admin '${adminUsername}' existe déjà, aucune action.`);
+    return;
+  }
+
+  const hashed = await hashPassword(adminPassword);
+  const userId = randomUUID();
+
+  await query(
+    `INSERT INTO users (id, username, password, role, settings, createdAt)
+     VALUES (?, ?, ?, ?, '{}', NOW())`,
+    [userId, adminUsername, hashed, "3"]
+  );
+
+  console.log(`✅ Admin '${adminUsername}' créé (id=${userId})`);
+}
 
 export async function initializeDatabase() {
   // Éviter les initialisations multiples simultanées
@@ -64,6 +118,10 @@ export async function initializeDatabase() {
         INDEX idx_date (date)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
+
+    // Seed roles + admin (si variables présentes)
+    await seedRoles();
+    await seedAdmin();
 
     console.log("✅ Database tables initialized successfully");
   } catch (error) {

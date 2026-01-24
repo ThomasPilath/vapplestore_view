@@ -1,23 +1,26 @@
-import { initializeDatabase } from "@/lib/db-init";
 import { NextRequest } from "next/server";
-import { authenticate, unauthorizedResponse } from "@/lib/auth-middleware";
+import { authenticate, unauthorizedResponse, forbiddenResponse } from "@/lib/auth-middleware";
 import logger from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
-  // Vérifier l'authentification
+  // ⚠️ Requiert une authentification
   const user = authenticate(req);
   if (!user) {
     return unauthorizedResponse("Authentification requise");
   }
 
+  // ⚠️ Requiert un rôle admin (level 2)
+  if (user.roleLevel < 2) {
+    return forbiddenResponse("Seul un administrateur peut accéder à cet endpoint");
+  }
+
   try {
-    await initializeDatabase();
     return Response.json({
       success: true,
-      message: "Database initialized successfully",
+      message: "Init endpoint - database already initialized at startup",
     });
   } catch (error) {
-    logger.error("Database initialization error", error);
+    logger.error("Init endpoint error", error);
     return Response.json(
       {
         success: false,

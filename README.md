@@ -1,53 +1,69 @@
-# Vapplestore View 🚀
+# Vapplestore View
 
-**Auteur :** PILATH  
-**Version :** 2.0.0  
-**Status :** ✅ Production Ready (après configuration sécurité)
+Application web de gestion et reporting pour la franchise Vapplestore.
 
-## À propos
+## 📋 Fonctionnalités
 
-**Vapplestore View** est un outil d'administration pour le suivi et la gestion des boutiques de la franchise **Vapplestore**. Il fournit une interface claire pour consulter les rapports, gérer les inventaires et suivre l'activité quotidienne.
-
----
-
-## Fonctionnalités principales ✅
-
-- 🔐 **Authentification sécurisée** avec httpOnly cookies et JWT
-- 🛡️ **Rate limiting** anti brute-force (5 tentatives/15 min)
-- 📊 Tableau de bord et pages de reporting
-- 👥 **Page d'administration des utilisateurs** (admins)
-- 📝 **Audit trail** complet (qui/quand/quoi)
-- 🗃️ **Soft delete** - données préservées
-- ⚙️ Gestion des paramètres personnalisables
-- 🎨 Thème sombre/clair
-- 📱 Interface responsive
-- 🐳 Docker ready avec non-root user
-- 🔒 Headers de sécurité (CSP, X-Frame-Options, etc.)
+- 🔐 Authentification JWT sécurisée (3 niveaux : vendeur, gestionnaire, admin)
+- 📊 Tableaux de bord et rapports
+- 💰 Gestion des revenus et achats
+- 👥 Administration des utilisateurs (admin)
+- 📝 Audit trail complet
+- 🎨 Interface responsive avec thème clair/sombre
+- 🐳 Déploiement Docker
 
 ---
 
-## Technologies
-
-- **Next.js** 16.1.1 + **TypeScript** 5.9.3 (strict mode)
-- **React** 19.2.3 avec **Zustand** state management
-- **Tailwind CSS** 4.1.18 + **shadcn/ui**
-- **MySQL/MariaDB** 11 avec connexion pooling
-- **JWT** (jsonwebtoken 9.0.3) - Access 15min + Refresh 7d
-- **bcryptjs** 3.0.3 - Hashing sécurisé
-- **Zod** 3.23.8 - Validation schémas
-- **Docker** multi-stage build optimisé
-
----
-
-## 🚀 Démarrage rapide
+## 🚀 Installation rapide
 
 ### Prérequis
 
-- **Bun** ou Node.js 20+
-- Base de données **MySQL/MariaDB** 11+
-- **Docker** (optionnel)
+- **MySQL/MariaDB** 11+ (accessible)
+- **Docker** (recommandé) ou **Node.js 20+/Bun**
 
-### Installation
+### Avec Docker (production)
+
+1. **Configurer les variables d'environnement**
+
+Dans Portainer (ou votre orchestrateur Docker), définissez ces variables :
+
+```env
+DATABASE_HOST=localhost
+DATABASE_PORT=3306
+DATABASE_NAME=vapplestore
+DATABASE_USER=vapplestore_app
+DATABASE_PASSWORD=votre_password_db
+
+JWT_ACCESS_SECRET=<généré_via_openssl_rand_-base64_64>
+JWT_REFRESH_SECRET=<généré_via_openssl_rand_-base64_64_different>
+
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=VotreMotDePasseFort123!
+
+ALLOWED_ORIGINS=https://votre-domaine.com
+```
+
+2. **Déployer l'image Docker**
+
+```bash
+docker pull pilath/vapplestore-view:latest
+docker run -d -p 3000:3000 --env-file .env pilath/vapplestore-view:latest
+```
+
+3. **C'est tout !**
+
+L'application s'initialise automatiquement au démarrage :
+- ✅ Création des tables
+- ✅ Création des rôles
+- ✅ Création du compte admin
+
+4. **Se connecter**
+
+Ouvrez `http://votre-domaine.com` (ou `http://localhost:3000`) et connectez-vous avec les identifiants admin.
+
+---
+
+### En local (développement)
 
 ```bash
 # Cloner et installer
@@ -57,247 +73,97 @@ bun install
 
 # Configurer les variables d'environnement
 cp .env.example .env.local
-# IMPORTANT : Éditer .env.local avec vos valeurs (voir section Variables d'environnement)
-```
 
-### Initialisation de la base de données
+# Éditer .env.local avec vos valeurs (DB + JWT secrets + admin)
+nano .env.local
 
-**Option 1 : Migration automatique (recommandé)**
-```bash
-# Démarrer l'application - les migrations s'appliquent automatiquement
+# Démarrer
 bun run dev
-
-# Ou via l'API
-curl http://localhost:3000/api/db-check
 ```
 
-**Option 2 : Script d'initialisation**
-```bash
-# Créer tables + utilisateur admin
-bun run init-prod
-```
-
-### Démarrage
-
-```bash
-# Développement
-bun run dev
-
-# Production
-bun run build
-bun run start
-```
-
-L'application sera accessible à `http://localhost:3000`.
+Ouvrez `http://localhost:3000`
 
 ---
 
-## 📡 Routes API importantes
-
-### 🔧 Administration & Système
-
-| Route | Méthode | Description | Auth |
-|-------|---------|-------------|------|
-| `/api/db-check` | GET | Vérifier DB + appliquer migrations | Non |
-| `/api/init` | POST | Initialiser DB + créer admin | Non |
-| `/api/audit` | GET | Historique audit (params: `recordId`, `tableName`, `userId`) | Admin |
-
-### 🔐 Authentification
-
-| Route | Méthode | Description | Auth |
-|-------|---------|-------------|------|
-| `/api/auth/login` | POST | Connexion (body: `username`, `password`) | Non |
-| `/api/auth/logout` | POST | Déconnexion | Oui |
-| `/api/auth/refresh` | POST | Rafraîchir token | Non (cookie) |
-| `/api/auth/me` | GET | Utilisateur actuel | Oui |
-
-### 📊 Données métier
-
-| Route | Méthode | Description | Auth | Role min |
-|-------|---------|-------------|------|----------|
-| `/api/purchases` | GET | Liste achats | Oui | vendeur |
-| `/api/purchases` | POST | Créer achat | Oui | gestionnaire |
-| `/api/purchases` | PUT | Modifier achat | Oui | gestionnaire |
-| `/api/purchases` | DELETE | Supprimer achat (soft) | Oui | gestionnaire |
-| `/api/revenues` | GET | Liste revenus | Oui | vendeur |
-| `/api/revenues` | POST | Créer revenu | Oui | gestionnaire |
-| `/api/revenues` | PUT | Modifier revenu | Oui | gestionnaire |
-| `/api/revenues` | DELETE | Supprimer revenu (soft) | Oui | gestionnaire |
-
-### 👥 Gestion utilisateurs
-
-| Route | Méthode | Description | Auth | Role min |
-|-------|---------|-------------|------|----------|
-| `/api/admin/users` | GET | Liste utilisateurs | Oui | admin |
-| `/api/admin/users` | POST | Créer utilisateur | Oui | admin |
-| `/api/admin/users` | PUT | Modifier utilisateur | Oui | admin |
-| `/api/admin/users` | DELETE | Supprimer utilisateur (soft) | Oui | admin |
-| `/api/admin/roles` | GET | Liste rôles disponibles | Oui | admin |
-
-### 📋 Exemples d'utilisation
-
-**Vérifier et migrer la base de données :**
-```bash
-curl http://localhost:3000/api/db-check
-# ✅ Réponse : { connected: true, migrationsApplied: 3 }
-```
-
-**Consulter l'audit trail :**
-```bash
-# Historique d'un utilisateur
-curl -H "Cookie: accessToken=..." \
-  "http://localhost:3000/api/audit?userId=1"
-
-# Historique d'un enregistrement
-curl -H "Cookie: accessToken=..." \
-  "http://localhost:3000/api/audit?recordId=5&tableName=purchases"
-```
-
-**Login :**
-```bash
-curl -X POST http://localhost:3000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"YourPassword"}' \
-  -c cookies.txt
-# Les tokens sont dans les cookies httpOnly
-```
-
----
-
-## 🔑 Variables d'environnement
-
-### 📝 Fichier `.env.local` ou `.env`
+## 🔑 Variables d'environnement requises
 
 ```env
-# Base de données (OBLIGATOIRE)
+# Base de données
 DATABASE_HOST=localhost
 DATABASE_PORT=3306
-DATABASE_USER=root
-DATABASE_PASSWORD=your_mysql_password
 DATABASE_NAME=vapplestore
+DATABASE_USER=root
+DATABASE_PASSWORD=votre_password
 
-# JWT Secrets (OBLIGATOIRE - générer avec openssl rand -base64 64)
-JWT_ACCESS_SECRET=your_very_long_random_access_secret_min_32_chars
-JWT_REFRESH_SECRET=your_very_long_random_refresh_secret_min_32_chars
+# Secrets JWT (IMPORTANT : générez avec `openssl rand -base64 64`)
+JWT_ACCESS_SECRET=votre_secret_access
+JWT_REFRESH_SECRET=votre_secret_refresh
 
-# Utilisateur admin initial (optionnel - défauts : admin/AdminPassword123)
+# Admin créé automatiquement au démarrage
 ADMIN_USERNAME=admin
-ADMIN_PASSWORD=YourStrongPassword123!
+ADMIN_PASSWORD=MotDePasseFort123!
 
-# CORS - Origines autorisées (optionnel)
-# Format: comma-separated list
-ALLOWED_ORIGINS=http://localhost:3000,http://localhost:6413,https://votre-domaine.com
-
-# API Key (optionnel - pour intégrations futures)
-API_KEY=your_api_key_if_needed
+# CORS (optionnel)
+ALLOWED_ORIGINS=http://localhost:3000,https://votre-domaine.com
 ```
 
-### ⚠️ IMPORTANT - Sécurité
-
-**Avant production, vous DEVEZ :**
-
-1. **Générer des secrets JWT forts** :
-   ```bash
-   # Générer un secret access
-   openssl rand -base64 64
-   
-   # Générer un secret refresh (différent!)
-   openssl rand -base64 64
-   ```
-
-2. **Copier les secrets dans `.env.local`** :
-   ```env
-   JWT_ACCESS_SECRET=<output_commande_1>
-   JWT_REFRESH_SECRET=<output_commande_2>
-   ```
-
-3. **Changer le mot de passe admin par défaut** :
-   ```env
-   ADMIN_PASSWORD=VotreMotDePasseTrèsComplexe123!@#
-   ```
-
-4. **Configurer ALLOWED_ORIGINS pour votre domaine** :
-   ```env
-   ALLOWED_ORIGINS=https://votre-domaine.com,https://www.votre-domaine.com
-   ```
-
----
-
-## 🔒 Sécurité - Features implémentées
-
-### ✅ Authentification & Autorisation
-- ✅ **httpOnly Cookies** - Tokens inaccessibles au JavaScript (protection XSS)
-- ✅ **JWT Rotation** - Refresh token rotation automatique
-- ✅ **Rate Limiting** - 5 tentatives login / 15 min par IP
-- ✅ **Secrets validation** - Application refuse de démarrer sans JWT_*_SECRET
-- ✅ **Role-based access** - 3 niveaux (vendeur/gestionnaire/admin)
-- ✅ **Password hashing** - bcrypt avec salt rounds 10
-
-### ✅ Base de données
-- ✅ **Migrations versionnées** - Schema changes trackés (v1, v2, v3)
-- ✅ **Transactions** - Opérations multi-tables atomiques
-- ✅ **Audit trail** - Table `audit_log` track tous les changements
-- ✅ **Soft delete** - Données préservées avec `deletedAt`
-- ✅ **Parameterized queries** - Protection SQL injection
-- ✅ **Unique index** - `users.username` pour performance login
-
-### ✅ Headers de sécurité
-- ✅ **CORS explicite** - Middleware avec origines whitelistées
-- ✅ **Content-Security-Policy** - Limite sources de contenu
-- ✅ **X-Frame-Options** - Protection clickjacking
-- ✅ **X-Content-Type-Options** - nosniff
-- ✅ **Strict-Transport-Security** - Force HTTPS
-- ✅ **Referrer-Policy** - Limite fuites d'info
-- ✅ **Permissions-Policy** - Désactive APIs sensibles
-
-### ✅ Infrastructure
-- ✅ **Docker non-root user** - Container s'exécute avec UID 1001
-- ✅ **Multi-stage build** - Image optimisée Alpine Linux
-- ✅ **GitHub Actions** - Lint + Type check avant build
-- ✅ **Structured logging** - Logs avec contexte (ready for Sentry/DataDog)
-
----
-
-## 📦 Scripts disponibles
+⚠️ **En production** : générez de vrais secrets forts et changez le mot de passe admin !
 
 ```bash
-# Développement
-bun run dev              # Démarrer serveur dev (port 3000)
-bun run build            # Build production
-bun run start            # Démarrer en production
-bun run lint             # Linter ESLint
-
-# Base de données
-bun run init-prod        # Initialiser DB + créer admin
-bun run test-db          # Tester connexion DB
-bun run migrate-add-settings  # Migration paramètres (legacy)
-
-# Utilisateurs
-bun run create-user      # CLI création utilisateur
-# Usage: bun run create-user <username> <password> <role>
-# Exemple: bun run create-user john Secret123 gestionnaire
-
-# Tests & Développement
-bun run test-api         # Tester endpoints API
+openssl rand -base64 64  # Pour JWT_ACCESS_SECRET
+openssl rand -base64 64  # Pour JWT_REFRESH_SECRET (différent!)
 ```
 
 ---
 
-## 👥 Gestion des utilisateurs
+## 👥 Rôles et permissions
 
-### Rôles disponibles
+| Rôle | Permissions |
+|------|-------------|
+| **vendeur** | 📖 Consultation seule |
+| **gestionnaire** | 📖 Consultation + ✏️ Création/modification |
+| **admin** | 🔑 Accès complet + gestion utilisateurs |
 
-| Rôle | Level | Permissions |
-|------|-------|-------------|
-| **vendeur** | 0 | 📖 Lecture seule (purchases, revenues) |
-| **gestionnaire** | 1 | 📖 Lecture + ✏️ Écriture (créer/modifier/supprimer) |
-| **admin** | 2 | 🔑 Tous droits + gestion utilisateurs + audit |
+Pour créer d'autres utilisateurs, connectez-vous en admin et allez dans le menu "Utilisateurs".
 
-### Créer des utilisateurs
+---
 
-**Via l'interface web (recommandé) :**
-1. Se connecter en tant qu'admin
-2. Menu latéral → "Utilisateurs"
+## 📚 Documentation complète
+
+- [DATABASE_INITIALIZATION.md](DATABASE_INITIALIZATION.md) - Détails sur l'init automatique
+- [GITHUB_SECRETS.md](GITHUB_SECRETS.md) - Configuration CI/CD
+- `.env.example` - Variables d'environnement expliquées
+
+---
+
+## 🛠️ Commandes utiles
+
+```bash
+bun run dev              # Démarrer en développement
+bun run build            # Build production
+bun run start            # Démarrer en production
+bun run lint             # Vérifier le code
+bun run create-user      # Créer un utilisateur CLI
+                         # Usage: bun run create-user <username> <password> <role>
+```
+
+---
+
+## 🛡️ Sécurité
+
+L'application implémente plusieurs couches de sécurité :
+- httpOnly cookies (protection XSS)
+- Rate limiting anti brute-force (5 tentatives/15 min)
+- Validation JWT au démarrage
+- CORS avec whitelist
+- Headers de sécurité (CSP, HSTS, X-Frame-Options)
+- Soft delete et audit trail
+- Docker non-root user
+
+---
+
+**Auteur :** PILATH | **Version :** 2.0.0 | **Licence :** Tous droits réservés © 2026
+
 3. Bouton "Nouvel utilisateur"
 4. Remplir formulaire (username, password, role)
 
@@ -434,9 +300,9 @@ docker compose down
 ### Configuration Docker
 
 **Ports exposés :**
-- **App** : `6413:3000`
+- **App** : `3000:3000`
 - **MariaDB** : `3307:3306` (interne uniquement en prod)
-- **phpMyAdmin** : `6480:80` (dev only)
+- **phpMyAdmin** : `8080:80` (dev only)
 
 **Volumes persistants :**
 - `mariadb_data` : Données MySQL/MariaDB
@@ -524,7 +390,7 @@ server {
     ssl_certificate_key /path/to/key.pem;
 
     location / {
-        proxy_pass http://localhost:6413;
+        proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade $http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -671,7 +537,7 @@ vapplestore_view/
 │   ├── test-db.ts          # Tester connexion DB
 │   └── test-api.ts         # Tester endpoints API
 ├── public/                  # Assets statiques
-├── middleware.ts            # Middleware Next.js (CORS, headers)
+├── proxy.ts                 # Proxy Next.js (CORS, headers de sécurité)
 ├── next.config.ts           # Config Next.js (CSP, headers)
 ├── tsconfig.json            # Config TypeScript (strict)
 ├── eslint.config.mjs        # Config ESLint
@@ -726,7 +592,7 @@ docker compose ps mariadb
 ```
 
 **Solutions :**
-1. Vérifier `DATABASE_HOST`, `DATABASE_USER`, `DATABASE_PASSWORD` dans `.env.local`
+1. Vérifier `DATABASE_HOST`, `DATABASE_USER`, `DATABASE_PASSWORD` dans `.env`
 2. Si Docker : vérifier que le conteneur `mariadb` est démarré
 3. Tester connexion manuelle :
    ```bash
@@ -745,9 +611,9 @@ docker compose ps mariadb
 openssl rand -base64 64  # Secret 1
 openssl rand -base64 64  # Secret 2
 
-# Ajouter dans .env.local
-echo "JWT_ACCESS_SECRET=<secret1>" >> .env.local
-echo "JWT_REFRESH_SECRET=<secret2>" >> .env.local
+# Ajouter dans .env
+echo "JWT_ACCESS_SECRET=<secret1>" >> .env
+echo "JWT_REFRESH_SECRET=<secret2>" >> .env
 
 # Redémarrer
 bun run dev
@@ -914,80 +780,9 @@ bun test
 
 - **Code Style** : ESLint + Prettier
 - **TypeScript** : Mode strict activé
-- **Naming** : camelCase (JS/TS), kebab-case (fichiers)
-
----
-
-## 📋 Changelog
-
-### Version 2.0.0 (2026-01-23)
-
-**🔒 Sécurité (CRITIQUE)**
-- ✅ httpOnly cookies pour tokens JWT (protection XSS)
-- ✅ Rate limiting login (5 tentatives/15min)
-- ✅ JWT secrets validation au démarrage
-- ✅ CORS explicite avec whitelist origines
-- ✅ Headers de sécurité (CSP, X-Frame-Options, HSTS, etc.)
-- ✅ Docker non-root user (UID/GID 1001)
-- ✅ Unique index sur `users.username`
-
-**🗄️ Base de données**
-- ✅ Système de migrations versionné (v1-v3)
-- ✅ Transaction wrapper pour opérations atomiques
-- ✅ Audit trail complet (`audit_log` table)
-- ✅ Soft delete pattern (colonne `deletedAt`)
-- ✅ Tracking utilisateur (colonnes `createdBy`, `updatedBy`)
-
-**🛠️ Infrastructure**
-- ✅ Middleware Next.js pour CORS et headers
-- ✅ GitHub Actions avec lint + type check
-- ✅ Structured logging avec contexte
-- ✅ API `/api/audit` pour historique
-- ✅ API `/api/db-check` pour migrations
-
-**📝 Documentation**
-- ✅ README complet avec routes API
-- ✅ Guide troubleshooting
-- ✅ Documentation variables d'environnement
-- ✅ Checklist déploiement production
-
-### Version 1.0.0 (2026-01-15)
-
-- 🎉 Release initiale
-- ✅ Authentification JWT basique
-- ✅ CRUD purchases & revenues
-- ✅ Gestion utilisateurs (admins)
-- ✅ Dashboard & reporting
-- ✅ Docker support
-
----
-
-## 📞 Support
-
-### Questions fréquentes (FAQ)
-
-**Q: L'application est-elle prête pour la production ?**  
-R: Oui, après avoir suivi la checklist de sécurité (JWT secrets, HTTPS, etc.)
-
-**Q: Comment migrer depuis la v1.0 ?**  
-R: Les migrations s'appliquent automatiquement au démarrage. Les données existantes sont préservées.
-
-**Q: Puis-je utiliser PostgreSQL au lieu de MySQL ?**  
-R: Non actuellement. Le code utilise mysql2. Une migration nécessiterait adapter lib/db.ts.
-
-**Q: Les données supprimées sont-elles récupérables ?**  
-R: Oui, grâce au soft delete. Les données ont un champ `deletedAt` mais restent en base.
-
-**Q: Comment activer le mode debug ?**  
-R: Ajouter `DEBUG=true` dans `.env.local` et consulter les logs.
-
-### Contact
-
-**Auteur :** PILATH  
-**Projet :** Vapplestore View  
-**Année :** 2026
-
-Pour signaler un bug ou proposer une amélioration, ouvrez une **issue** sur GitHub.
+- **Naming** : 
+  - kebab-case pour tous les fichiers (`.ts`, `.tsx`, `.js`, `.jsx`), 
+  - PascalCase pour les noms de composants/classes/types dans le code
 
 ---
 
@@ -996,18 +791,5 @@ Pour signaler un bug ou proposer une amélioration, ouvrez une **issue** sur Git
 **Tous droits réservés © 2026 PILATH**
 
 Ce projet est privé et propriétaire. Toute reproduction, distribution ou utilisation non autorisée est interdite.
-
----
-
-## ⭐ Remerciements
-
-- **Next.js Team** pour le framework
-- **Vercel** pour shadcn/ui
-- **shadcn** pour les composants UI
-- **Communauté open-source** pour les bibliothèques utilisées
-
----
-
-**✅ Vapplestore View - Production Ready depuis v2.0.0**
 
 *Pour toute question, consultez la section Dépannage ou ouvrez une issue GitHub.*
